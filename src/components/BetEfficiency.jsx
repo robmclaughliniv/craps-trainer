@@ -5,9 +5,12 @@ export default function BetEfficiency({
   bets,
   comePoints,
   dontComePoints,
+  buyVigPolicy,
+  fieldPayOn12,
 }) {
+  const classOpts = { buyVigPolicy, fieldPayOn12 };
   const allRisk = [];
-  Object.entries(bets).forEach(([k, v]) => { if (v > 0) allRisk.push({ key: k, amt: v, cat: classifyBet(k) }); });
+  Object.entries(bets).forEach(([k, v]) => { if (v > 0) allRisk.push({ key: k, amt: v, cat: classifyBet(k, classOpts) }); });
   comePoints.forEach((cp) => {
     allRisk.push({ key: `come_${cp.number}`, amt: cp.amount, cat: "smart" });
     if (cp.odds > 0) allRisk.push({ key: `comeOdds_${cp.number}`, amt: cp.odds, cat: "smart" });

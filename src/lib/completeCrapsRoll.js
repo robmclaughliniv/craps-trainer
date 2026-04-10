@@ -56,13 +56,14 @@ export function completeCrapsRoll(ctx) {
     isBotShooter,
     autoRollTimerRef,
     soundEnabled,
+    fieldPayOn12 = 3,
   } = ctx;
 
   setDie1(d1); setDie2(d2); lastRollRef.current = { d1, d2, total };
   setRolling(false); setRollCount((p) => p + 1);
   var phaseBeforeRoll = phase;
   let results = [];
-  if (bets.field > 0) { if (total === 2) { const w = win("field", bets.field * 2); results.push(`Field WIN +$${w}`); } else if (total === 12) { const w = win("field", bets.field * 3); results.push(`Field WIN +$${w}`); } else if ([3,4,9,10,11].includes(total)) { const w = win("field", bets.field); results.push(`Field WIN +$${w}`); } else { const l = lose("field"); results.push(`Field LOSE -$${l}`); } }
+  if (bets.field > 0) { if (total === 2) { const w = win("field", bets.field * 2); results.push(`Field WIN +$${w}`); } else if (total === 12) { const w = win("field", bets.field * fieldPayOn12); results.push(`Field WIN +$${w}`); } else if ([3,4,9,10,11].includes(total)) { const w = win("field", bets.field); results.push(`Field WIN +$${w}`); } else { const l = lose("field"); results.push(`Field LOSE -$${l}`); } }
   if (bets.any7 > 0) { if (total === 7) { const w = win("any7", bets.any7 * 4); results.push(`Any 7 WIN +$${w}`); } else { const l = lose("any7"); results.push(`Any 7 LOSE -$${l}`); } }
   if (bets.anyCraps > 0) { if ([2,3,12].includes(total)) { const w = win("anyCraps", bets.anyCraps * 7); results.push(`Any Craps WIN +$${w}`); } else { const l = lose("anyCraps"); results.push(`Any Craps LOSE -$${l}`); } }
   if (bets.yo > 0) { if (total === 11) { const w = win("yo", bets.yo * 15); results.push(`Yo WIN +$${w}`); } else { const l = lose("yo"); results.push(`Yo LOSE -$${l}`); } }

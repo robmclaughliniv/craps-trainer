@@ -40,6 +40,9 @@ export default function CrapsTrainer() {
   const [bankroll, setBankroll] = useState(500);
   const [startingBankroll, setStartingBankroll] = useState(500);
   const [betUnit, setBetUnit] = useState(10);
+  const [tableMin, setTableMin] = useState(10);
+  const [buyVigPolicy, setBuyVigPolicy] = useState("always");
+  const [fieldPayOn12, setFieldPayOn12] = useState(3);
   const [bets, setBets] = useState(initialBets());
   const [die1, setDie1] = useState(3);
   const [die2, setDie2] = useState(4);
@@ -121,7 +124,7 @@ export default function CrapsTrainer() {
   }, [rollCount]);
 
   const trackBet = (key, amt) => {
-    const cat = classifyBet(key);
+    const cat = classifyBet(key, { buyVigPolicy, fieldPayOn12 });
     const t = betTracker.current;
     t.total++;
     if (cat === "smart") { t.smart++; t.smartAmt += amt; }
@@ -224,6 +227,7 @@ export default function CrapsTrainer() {
         rotationEnabled, setCurrentShooterIdx,
         isBotShooter, autoRollTimerRef,
         soundEnabled,
+        fieldPayOn12,
       });
     }, 500);
   };
@@ -296,6 +300,12 @@ export default function CrapsTrainer() {
         setStartingBankroll={setStartingBankroll}
         betUnit={betUnit}
         setBetUnit={setBetUnit}
+        tableMin={tableMin}
+        setTableMin={setTableMin}
+        buyVigPolicy={buyVigPolicy}
+        setBuyVigPolicy={setBuyVigPolicy}
+        fieldPayOn12={fieldPayOn12}
+        setFieldPayOn12={setFieldPayOn12}
         maxOdds={maxOdds}
         setMaxOdds={setMaxOdds}
         setShowSetup={setShowSetup}
@@ -306,15 +316,17 @@ export default function CrapsTrainer() {
   const comeTotal = comePoints.reduce((s,c)=>s+c.amount+c.odds,0);
   const dcTotal = dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
 
-  const exposureCalc = (total) => calcOutcome({ phase, point, bets, comePoints, dontComePoints }, total);
+  const exposureCalc = (total) => calcOutcome({ phase, point, bets, comePoints, dontComePoints, fieldPayOn12 }, total);
 
   const riskTotal_ = totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
   const bankrollPct = startingBankroll > 0 ? Math.round((bankroll / startingBankroll) * 100) : 100;
   const exposurePct = bankroll > 0 ? Math.round((riskTotal_ / bankroll) * 100) : 0;
+  const units = tableMin > 0 ? Math.floor(bankroll / tableMin) : 0;
+  const unitsColor = units >= 20 ? "#4caf50" : units >= 10 ? "#ffc107" : "#f44336";
 
   const getZone = () => {
-    if (bankrollPct <= 30) return { zone: "STOP", color: "#f44336", bg: "rgba(244,67,54,.12)", border: "rgba(244,67,54,.3)", msg: "Below 30% — stop-loss territory. Walk or grind." };
-    if (bankrollPct <= 50) return { zone: "DANGER", color: "#ff5722", bg: "rgba(255,87,34,.1)", border: "rgba(255,87,34,.25)", msg: "Below half. No new bets — let existing ones resolve." };
+    if (bankrollPct <= 30 || units < 5) return { zone: "STOP", color: "#f44336", bg: "rgba(244,67,54,.12)", border: "rgba(244,67,54,.3)", msg: units < 5 ? `${units} units left — stop-loss territory. Walk or grind.` : "Below 30% — stop-loss territory. Walk or grind." };
+    if (bankrollPct <= 50 || units < 10) return { zone: "DANGER", color: "#ff5722", bg: "rgba(255,87,34,.1)", border: "rgba(255,87,34,.25)", msg: units < 10 ? `Only ${units} units remaining. No new bets — let existing ones resolve.` : "Below half. No new bets — let existing ones resolve." };
     if (exposurePct > 20) return { zone: "HOT", color: "#ff9800", bg: "rgba(255,152,0,.08)", border: "rgba(255,152,0,.2)", msg: `${exposurePct}% of bankroll at risk — one 7 hurts.` };
     if (bankrollPct >= 130) return { zone: "HOUSE $", color: "#00e676", bg: "rgba(0,230,118,.08)", border: "rgba(0,230,118,.2)", msg: "Playing with profit. Lock in your buy-in mentally." };
     return { zone: "GREEN", color: "#4caf50", bg: "rgba(76,175,80,.06)", border: "rgba(76,175,80,.15)", msg: "Comfortable. Stick to your strategy." };
@@ -373,6 +385,7 @@ export default function CrapsTrainer() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:28}}>
             <TrainerStat label="BANKROLL" value={`$${bankroll.toLocaleString()}`} isDesktop={isDesktop} mono={mono} />
+            <TrainerStat label="UNITS" value={units} color={unitsColor} isDesktop={isDesktop} mono={mono} />
             <TrainerStat label="P&L" value={`${pnl>=0?"+":""}${pnl}`} color={pnl>=0?"#4caf50":"#f44336"} isDesktop={isDesktop} mono={mono} />
             <TrainerStat label="ROLLS" value={rollCount} color="#888" isDesktop={isDesktop} mono={mono} />
             <TrainerStat label="AT RISK" value={`$${totalBets}`} color="#ff9800" isDesktop={isDesktop} mono={mono} />
@@ -382,7 +395,7 @@ export default function CrapsTrainer() {
         <div style={{display:"flex",height:"calc(100vh - 52px)",overflow:"hidden"}}>
           <div style={{width:320,minWidth:320,borderRight:"1px solid rgba(255,255,255,.06)",overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555"}}>BETS</div>
-            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} />
+            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
             <BetPanel
               pnl_={pnl_}
               tab={tab}
@@ -409,6 +422,8 @@ export default function CrapsTrainer() {
               setAllTallHits={setAllTallHits}
               allNumbersHits={allNumbersHits}
               setAllNumbersHits={setAllNumbersHits}
+              buyVigPolicy={buyVigPolicy}
+              fieldPayOn12={fieldPayOn12}
             />
             <StrategyGuide
               pnl_={pnl_}
@@ -437,8 +452,10 @@ export default function CrapsTrainer() {
               removeComeOdds={removeComeOdds}
               addDcOdds={addDcOdds}
               removeDcOdds={removeDcOdds}
+              buyVigPolicy={buyVigPolicy}
+              fieldPayOn12={fieldPayOn12}
             />
-            <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} />
+            <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} buyVigPolicy={buyVigPolicy} fieldPayOn12={fieldPayOn12} />
             <StrategyQuickRef pnl_={pnl_} showStrategy={showStrategy} setShowStrategy={setShowStrategy} />
           </div>
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(255,255,255,.06)",overflowY:"auto"}}>
@@ -538,6 +555,7 @@ export default function CrapsTrainer() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>BANK</div><div style={{fontSize:13,fontWeight:700,color:"#fff",fontFamily:mono}}>${bankroll}</div></div>
+            <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>UNITS</div><div style={{fontSize:12,fontWeight:700,color:unitsColor,fontFamily:mono}}>{units}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>P&L</div><div style={{fontSize:12,fontWeight:700,color:pnl>=0?"#4caf50":"#f44336",fontFamily:mono}}>{pnl>=0?"+":""}{pnl}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>RISK</div><div style={{fontSize:12,fontWeight:700,color:"#ff9800",fontFamily:mono}}>${riskTotal}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>#{rollCount}</div>
@@ -565,7 +583,7 @@ export default function CrapsTrainer() {
             }}>{lastEntry.msg}</div>
           )}
         </div>
-        <BankrollZone compact pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} />
+        <BankrollZone compact pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
       </div>
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -609,6 +627,8 @@ export default function CrapsTrainer() {
               setAllTallHits={setAllTallHits}
               allNumbersHits={allNumbersHits}
               setAllNumbersHits={setAllNumbersHits}
+              buyVigPolicy={buyVigPolicy}
+              fieldPayOn12={fieldPayOn12}
             />
             <StrategyGuide
               pnl_={pnl_}
@@ -623,7 +643,7 @@ export default function CrapsTrainer() {
             />
           </>}
           {mobileTab==="position"&&<>
-            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} />
+            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
             <TableView
               pnl_={pnl_}
               mono={mono}
@@ -655,8 +675,10 @@ export default function CrapsTrainer() {
               removeComeOdds={removeComeOdds}
               addDcOdds={addDcOdds}
               removeDcOdds={removeDcOdds}
+              buyVigPolicy={buyVigPolicy}
+              fieldPayOn12={fieldPayOn12}
             />
-            <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} />
+            <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} buyVigPolicy={buyVigPolicy} fieldPayOn12={fieldPayOn12} />
             <ExposureMap
               pnl_={pnl_}
               mono={mono}

@@ -1,4 +1,4 @@
-import { HOUSE_EDGES, ratingColor, getMaxOddsAmt } from "../lib/betLogic.js";
+import { HOUSE_EDGES, ratingColor, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
 import Badge from "./Badge.jsx";
 
 const BET_LABELS = { pass: "Pass Line", dontPass: "Don't Pass", passOdds: "Pass Odds", dontPassOdds: "DP Odds", come: "Come (pending)", dontCome: "DC (pending)", comeOdds: "Come Odds (pre)", dontComeOdds: "DC Odds (pre)", place4: "Place 4", place5: "Place 5", place6: "Place 6", place8: "Place 8", place9: "Place 9", place10: "Place 10", field: "Field", hardway4: "Hard 4", hardway6: "Hard 6", hardway8: "Hard 8", hardway10: "Hard 10", any7: "Any 7", anyCraps: "Any Craps", yo: "Yo", boxcars: "Boxcars", aces: "Aces", buy4: "Buy 4", buy10: "Buy 10", horn: "Horn", ce: "C&E" };
@@ -29,6 +29,8 @@ export default function ActiveBets({
   removeComeOdds,
   addDcOdds,
   removeDcOdds,
+  buyVigPolicy,
+  fieldPayOn12,
 }) {
   const allBetsAtRisk = Object.entries(bets).filter(([, v]) => v > 0);
   const hasAnything = allBetsAtRisk.length > 0 || comePoints.length > 0 || dontComePoints.length > 0;
@@ -41,8 +43,16 @@ export default function ActiveBets({
     );
   }
 
+  const resolveHE = (k) => {
+    if (k === "buy4") return getBuyHE(4, buyVigPolicy);
+    if (k === "buy10") return getBuyHE(10, buyVigPolicy);
+    if (k === "field") return getFieldHE(fieldPayOn12);
+    if (k.includes("Odds")) return HOUSE_EDGES.odds;
+    return HOUSE_EDGES[k];
+  };
+
   const lineKeys = ["pass", "passOdds", "dontPass", "dontPassOdds"];
-  const placeKeys = ["place4", "place5", "place6", "place8", "place9", "place10"];
+  const placeKeys = ["place4", "place5", "place6", "place8", "place9", "place10", "buy4", "buy10"];
   const otherKeys = ["come", "comeOdds", "dontCome", "dontComeOdds", "field", "hardway4", "hardway6", "hardway8", "hardway10", "any7", "anyCraps", "yo", "boxcars", "aces"];
   const activeLine = lineKeys.filter((k) => bets[k] > 0);
   const activePlace = placeKeys.filter((k) => bets[k] > 0);
@@ -99,7 +109,7 @@ export default function ActiveBets({
 
       {activeLine.length > 0 && <>
         <div style={{ fontSize: 9, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginTop: 4, marginBottom: 2 }}>LINE</div>
-        {activeLine.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={HOUSE_EDGES[k.includes("Odds") ? "odds" : k]} accent={k.includes("Odds") ? "#00e676" : "#4caf50"} />)}
+        {activeLine.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={resolveHE(k)} accent={k.includes("Odds") ? "#00e676" : "#4caf50"} />)}
       </>}
 
       {comePoints.length > 0 && <>
@@ -114,12 +124,12 @@ export default function ActiveBets({
 
       {activePlace.length > 0 && <>
         <div style={{ fontSize: 9, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginTop: 8, marginBottom: 2 }}>PLACE</div>
-        {activePlace.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={HOUSE_EDGES[k]} accent="#ffc107" />)}
+        {activePlace.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={resolveHE(k)} accent="#ffc107" />)}
       </>}
 
       {activeOther.length > 0 && <>
         <div style={{ fontSize: 9, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginTop: 8, marginBottom: 2 }}>OTHER</div>
-        {activeOther.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={HOUSE_EDGES[k]} accent="#888" />)}
+        {activeOther.map((k) => <BetRow key={k} label={BET_LABELS[k]} amount={bets[k]} he={resolveHE(k)} accent="#888" />)}
       </>}
     </div>
   );

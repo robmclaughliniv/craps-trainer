@@ -5,6 +5,8 @@ export default function BankrollZone({
   bankrollPct,
   exposurePct,
   mono,
+  bankroll = 0,
+  currentTotalExposure = 0,
 }) {
   if (compact) {
     const barPct = Math.min(bankrollPct, 150);
@@ -39,6 +41,15 @@ export default function BankrollZone({
         <span style={{ color: "#888" }}>Bankroll: <span style={{ color: zoneInfo.color, fontWeight: 600, fontFamily: mono }}>{bankrollPct}%</span> of buy-in</span>
         <span style={{ color: "#888" }}>Exposure: <span style={{ color: exposurePct > 20 ? "#ff9800" : "#888", fontWeight: 600, fontFamily: mono }}>{exposurePct}%</span></span>
       </div>
+      {currentTotalExposure > 0 && (() => {
+        const sso = Math.floor(bankroll / Math.max(currentTotalExposure, 1));
+        const ssoColor = sso >= 4 ? "#4caf50" : sso >= 2 ? "#ffc107" : "#f44336";
+        return (
+          <div style={{ fontSize: 10, color: "#888", marginBottom: 6 }}>
+            Survivable seven-outs: <span style={{ color: ssoColor, fontWeight: 700, fontFamily: mono }}>{sso}</span>
+          </div>
+        );
+      })()}
       <div style={{ fontSize: 11, color: zoneInfo.color, lineHeight: 1.3 }}>{zoneInfo.msg}</div>
     </div>
   );

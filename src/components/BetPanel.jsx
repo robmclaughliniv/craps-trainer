@@ -1,4 +1,4 @@
-import { HOUSE_EDGES, getMaxOddsAmt } from "../lib/betLogic.js";
+import { HOUSE_EDGES, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
 import BetButton from "./BetButton.jsx";
 import Badge from "./Badge.jsx";
 
@@ -30,6 +30,8 @@ export default function BetPanel({
   setAllTallHits,
   allNumbersHits,
   setAllNumbersHits,
+  buyVigPolicy,
+  fieldPayOn12,
 }) {
   return (
     <div>
@@ -58,12 +60,12 @@ export default function BetPanel({
           <BetButton label="Place 10" he={HOUSE_EDGES.place10} amount={bets.place10} onBet={() => placeBet("place10")} onRemove={() => removeBet("place10")} disabled={phase === "comeout"} />
           <div style={{ height: 8 }} />
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>BUY BETS (true odds - 5% vig)</div>
-          <BetButton label="Buy 4" he={HOUSE_EDGES.buy4} amount={bets.buy4} onBet={() => placeBet("buy4")} onRemove={() => removeBet("buy4")} disabled={phase === "comeout"} />
-          <BetButton label="Buy 10" he={HOUSE_EDGES.buy10} amount={bets.buy10} onBet={() => placeBet("buy10")} onRemove={() => removeBet("buy10")} disabled={phase === "comeout"} />
+          <BetButton label="Buy 4" he={getBuyHE(4, buyVigPolicy)} amount={bets.buy4} onBet={() => placeBet("buy4")} onRemove={() => removeBet("buy4")} disabled={phase === "comeout"} />
+          <BetButton label="Buy 10" he={getBuyHE(10, buyVigPolicy)} amount={bets.buy10} onBet={() => placeBet("buy10")} onRemove={() => removeBet("buy10")} disabled={phase === "comeout"} />
           <div style={{ fontSize: 11, color: "#555", marginTop: 8, fontStyle: "italic" }}>Place 6/8 use $6 increments. Buy 4/10 beats Place 4/10 (4.76% vs 6.67%).</div>
         </>}
         {tab === "props" && <>
-          <BetButton label="Field" he={HOUSE_EDGES.field} amount={bets.field} onBet={() => placeBet("field")} onRemove={() => removeBet("field")} />
+          <BetButton label="Field" he={getFieldHE(fieldPayOn12)} amount={bets.field} onBet={() => placeBet("field")} onRemove={() => removeBet("field")} />
           <div style={{ height: 4 }} />
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>ONE-ROLL PROPS</div>
           <BetButton label="Any 7" he={HOUSE_EDGES.any7} amount={bets.any7} onBet={() => placeBet("any7")} onRemove={() => removeBet("any7")} mini />

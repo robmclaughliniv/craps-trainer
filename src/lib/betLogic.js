@@ -33,11 +33,27 @@ export function getBetIncrement(key, betUnit) {
   return betUnit;
 }
 
+export function getBuyHE(num, vigPolicy) {
+  if ((num === 4 || num === 10) && vigPolicy === "on-win") return 1.67;
+  return 4.76;
+}
+
+export function getFieldHE(payOn12) {
+  return payOn12 === 2 ? 5.56 : 2.78;
+}
+
 export const SMART_BETS = new Set(["pass", "dontPass", "come", "dontCome", "passOdds", "dontPassOdds", "place6", "place8"]);
 export const OK_BETS = new Set(["field", "place5", "place9", "buy4", "buy10"]);
 
-export function classifyBet(key) {
-  return SMART_BETS.has(key) || key.includes("Odds") ? "smart" : OK_BETS.has(key) ? "ok" : "trash";
+export function classifyBet(key, opts) {
+  if (SMART_BETS.has(key) || key.includes("Odds")) return "smart";
+  if (key === "buy4" || key === "buy10") {
+    return opts?.buyVigPolicy === "on-win" ? "smart" : "ok";
+  }
+  if (key === "field") {
+    return opts?.fieldPayOn12 === 2 ? "trash" : "ok";
+  }
+  return OK_BETS.has(key) ? "ok" : "trash";
 }
 
 export function initialBets() {
@@ -53,13 +69,13 @@ export function initialBets() {
 }
 
 /** Net P/L for ExposureMap preview for a hypothetical dice total (same logic as inline calcOutcome in coordinator). */
-export function calcOutcome({ phase, point, bets, comePoints, dontComePoints }, total) {
+export function calcOutcome({ phase, point, bets, comePoints, dontComePoints, fieldPayOn12 = 3 }, total) {
   let net = 0;
   const isPointPhase = phase === "point";
 
   if (bets.field > 0) {
     if (total === 2) net += bets.field * 2;
-    else if (total === 12) net += bets.field * 3;
+    else if (total === 12) net += bets.field * fieldPayOn12;
     else if ([3, 4, 9, 10, 11].includes(total)) net += bets.field;
     else net -= bets.field;
   }
