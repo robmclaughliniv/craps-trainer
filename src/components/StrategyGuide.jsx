@@ -24,8 +24,12 @@ export default function StrategyGuide({
   betUnit,
   comePoints,
   maxOdds,
+  bankroll,
+  tableMin,
 }) {
   const steps = getStrategySteps(activeStrategy, { bets, phase, point, betUnit, comePoints, maxOdds });
+  const selectedStrat = activeStrategy && STRATS.find((s) => s.id === activeStrategy);
+  const units = tableMin > 0 ? Math.floor(bankroll / tableMin) : 0;
 
   return (
     <div style={{ ...pnl_, padding: "10px 12px" }}>
@@ -48,9 +52,20 @@ export default function StrategyGuide({
         ))}
       </div>
 
+      {selectedStrat && units < selectedStrat.minUnits && (
+        <div style={{ fontSize: 11, color: "#ff9800", padding: "4px 0 6px", lineHeight: 1.4 }}>
+          {selectedStrat.label} typically needs {selectedStrat.minUnits}&times; table min (${tableMin * selectedStrat.minUnits} at ${tableMin} tables). You have {units} units. Consider Conservative or Smart Fun instead.
+        </div>
+      )}
+
       {steps && (
         <div style={{ borderTop: "1px solid rgba(255,255,255,.04)", paddingTop: 8 }}>
           {steps.map((s, i) => <Step key={i} {...s} />)}
+          {activeStrategy === "veteran" && (
+            <div style={{ fontSize: 11, color: "#ff9800", fontStyle: "italic", padding: "6px 0 0" }}>
+              Coverage tax: roughly $1.20 per decision more than Pass+Odds. You&apos;re trading EV for entertainment density. Smart Fun is the lower-cost alternative.
+            </div>
+          )}
         </div>
       )}
 

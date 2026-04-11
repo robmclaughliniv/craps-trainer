@@ -1,15 +1,17 @@
 import { getMaxOddsAmt } from "./betLogic.js";
 
 export const STRATS = [
-  { id: "conservative", label: "Conservative", short: "Pass + Odds", color: "#4caf50" },
-  { id: "veteran", label: "Veteran", short: "Pass + 6/8", color: "#2196f3" },
-  { id: "molly", label: "3-Pt Molly", short: "Pass + 2 Comes", color: "#ff9800" },
+  { id: "conservative", label: "Conservative", short: "Pass + Odds", color: "#4caf50", minUnits: 20 },
+  { id: "veteran", label: "Veteran", short: "Pass + 6/8", color: "#2196f3", minUnits: 30 },
+  { id: "smartfun", label: "Smart Fun", short: "Pass + Smart Coverage", color: "#00bcd4", minUnits: 25 },
+  { id: "molly", label: "3-Pt Molly", short: "Pass + 2 Comes", color: "#ff9800", minUnits: 40 },
 ];
 
 export function isOnStrategy(strategyId, betKey) {
   if (!strategyId) return true;
   if (strategyId === "conservative") return ["pass", "passOdds", "dontPass", "dontPassOdds"].includes(betKey);
   if (strategyId === "veteran") return ["pass", "passOdds", "dontPass", "dontPassOdds", "place6", "place8"].includes(betKey);
+  if (strategyId === "smartfun") return ["pass", "passOdds", "place6", "place8", "come", "comeOdds"].includes(betKey);
   if (strategyId === "molly") return ["pass", "passOdds", "dontPass", "dontPassOdds", "come", "comeOdds"].includes(betKey);
   return true;
 }
@@ -92,6 +94,51 @@ export function getStrategySteps(strategyId, gameState) {
       }
       const atTarget = numComePoints >= 2 && comeOddsAllMaxed;
       steps.push({ done: atTarget, active: false, text: "3 numbers working. Stop. Collect or reset." });
+    }
+    return steps;
+  }
+
+  if (strategyId === "smartfun") {
+    const pointIs6 = point === 6;
+    const pointIs8 = point === 8;
+    const need6 = !isComeout && !pointIs6;
+    const need8 = !isComeout && !pointIs8;
+    const steps = [];
+    if (isComeout) {
+      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${betUnit})` });
+      steps.push({ done: false, active: false, text: "Wait for point to be set" });
+    } else if (pointIs6) {
+      steps.push({ done: hasPass, active: false, text: `Pass Line on 6 ✓` });
+      steps.push({ done: passOddsDone, active: !passOddsDone && hasPass, text: `Max odds on Pass (${bets.passOdds}/${passOddsMax})` });
+      steps.push({ done: has8, active: !has8 && passOddsDone, text: "Place 8" });
+      const allDone = passOddsDone && has8;
+      steps.push({ done: allDone, active: false, text: "Hold" });
+    } else if (pointIs8) {
+      steps.push({ done: hasPass, active: false, text: `Pass Line on 8 ✓` });
+      steps.push({ done: passOddsDone, active: !passOddsDone && hasPass, text: `Max odds on Pass (${bets.passOdds}/${passOddsMax})` });
+      steps.push({ done: has6, active: !has6 && passOddsDone, text: "Place 6" });
+      const allDone = passOddsDone && has6;
+      steps.push({ done: allDone, active: false, text: "Hold" });
+    } else {
+      steps.push({ done: hasPass, active: false, text: `Pass Line on ${point} ✓` });
+      steps.push({ done: passOddsDone, active: !passOddsDone && hasPass, text: `Max odds on Pass (${bets.passOdds}/${passOddsMax})` });
+      if (need6) steps.push({ done: has6, active: !has6 && passOddsDone, text: "Place 6" });
+      if (need8) steps.push({ done: has8, active: !has8 && (passOddsDone || (need6 && has6)), text: "Place 8" });
+      const placeDone = (!need6 || has6) && (!need8 || has8);
+      const canCome = numComePoints === 0 && !hasPendingCome;
+      if (hasPendingCome) {
+        steps.push({ done: false, active: true, text: "Come bet pending — waiting for roll" });
+      } else if (canCome && passOddsDone && placeDone) {
+        steps.push({ done: false, active: true, text: "Optional: Place a Come bet" });
+      } else if (numComePoints > 0) {
+        const cp = comePoints[0];
+        const cpMax = getMaxOddsAmt(maxOdds, cp.amount, cp.number);
+        const cpDone = cp.odds >= cpMax;
+        steps.push({ done: true, active: false, text: `Come on ${cp.number} ($${cp.amount})` });
+        steps.push({ done: cpDone, active: !cpDone, text: `Max odds on Come ${cp.number} (${cp.odds}/${cpMax})` });
+      }
+      const allDone = passOddsDone && placeDone && (numComePoints === 0 || comeOddsAllMaxed);
+      steps.push({ done: allDone, active: false, text: "Hold" });
     }
     return steps;
   }

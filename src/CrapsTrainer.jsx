@@ -435,6 +435,8 @@ export default function CrapsTrainer() {
               betUnit={betUnit}
               comePoints={comePoints}
               maxOdds={maxOdds}
+              bankroll={bankroll}
+              tableMin={tableMin}
             />
             <ActiveBets
               pnl_={pnl_}
@@ -640,6 +642,8 @@ export default function CrapsTrainer() {
               betUnit={betUnit}
               comePoints={comePoints}
               maxOdds={maxOdds}
+              bankroll={bankroll}
+              tableMin={tableMin}
             />
           </>}
           {mobileTab==="position"&&<>
