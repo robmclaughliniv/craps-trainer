@@ -72,6 +72,7 @@ export default function CrapsTrainer() {
   const [allSmallHits, setAllSmallHits] = useState([]);
   const [allTallHits, setAllTallHits] = useState([]);
   const [allNumbersHits, setAllNumbersHits] = useState([]);
+  const [consecutivePSOs, setConsecutivePSOs] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [rotationEnabled, setRotationEnabled] = useState(true);
 
@@ -118,6 +119,7 @@ export default function CrapsTrainer() {
         totalAtRisk: Object.values(bets).reduce((s, v) => s + v, 0) + comePoints.reduce((s, c) => s + c.amount + c.odds, 0) + dontComePoints.reduce((s, d) => s + d.amount + d.odds, 0),
         comePoints, dontComePoints, rollCount, sessionWins, sessionLosses,
         lastRoll: lastRollRef.current, lastResult: log.length > 0 ? log[log.length - 1].msg : "",
+        consecutivePSOs,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,6 +230,7 @@ export default function CrapsTrainer() {
         isBotShooter, autoRollTimerRef,
         soundEnabled,
         fieldPayOn12,
+        setConsecutivePSOs,
       });
     }, 500);
   };
@@ -275,6 +278,7 @@ export default function CrapsTrainer() {
     setShowSetup(true); setCoachAdvice(null); setLastRollNet(null);
     setAllSmallBet(0); setAllTallBet(0); setAllNumbersBet(0); setAllSmallHits([]); setAllTallHits([]); setAllNumbersHits([]);
     setCurrentShooterIdx(0); setAutoRolling(false); setShooterPaused(true);
+    setConsecutivePSOs(0);
   };
 
   const pnl = bankroll - startingBankroll + totalBets;
@@ -283,6 +287,7 @@ export default function CrapsTrainer() {
     totalAtRisk: totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0),
     comePoints, dontComePoints, rollCount, sessionWins, sessionLosses,
     lastRoll: lastRollRef.current, lastResult: log.length > 0 ? log[log.length-1].msg : "No rolls yet",
+    consecutivePSOs,
   });
 
   const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap'); @keyframes diceTumble { 0%{transform:translateY(-18px) rotate(-180deg) scale(.7);opacity:.3} 30%{transform:translateY(4px) rotate(40deg) scale(1.08);opacity:1} 50%{transform:translateY(-6px) rotate(-15deg) scale(1.02)} 70%{transform:translateY(2px) rotate(5deg) scale(1)} 85%{transform:translateY(-1px) rotate(-2deg)} 100%{transform:translateY(0) rotate(0) scale(1)} } @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } @keyframes pulseGreen { 0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)} 50%{box-shadow:0 0 0 8px rgba(76,175,80,0)} } @keyframes pulsePurple { 0%,100%{box-shadow:0 0 0 0 rgba(156,39,176,.4)} 50%{box-shadow:0 0 0 8px rgba(156,39,176,0)} } *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}`;
@@ -342,6 +347,7 @@ export default function CrapsTrainer() {
     setCoachAdvice(null); setLastRollNet(null);
     setAllSmallBet(0); setAllTallBet(0); setAllNumbersBet(0); setAllSmallHits([]); setAllTallHits([]); setAllNumbersHits([]);
     setCurrentShooterIdx(0); setAutoRolling(false); setShooterPaused(true);
+    setConsecutivePSOs(0);
     betTracker.current = { smart: 0, ok: 0, trash: 0, smartAmt: 0, okAmt: 0, trashAmt: 0, total: 0, onStrat: 0, offStrat: 0, peak: startingBankroll, trough: startingBankroll };
     sessionStartRef.current = Date.now();
   };
@@ -353,6 +359,7 @@ export default function CrapsTrainer() {
     setShowSetup(true); setCoachAdvice(null); setLastRollNet(null);
     setAllSmallBet(0); setAllTallBet(0); setAllNumbersBet(0); setAllSmallHits([]); setAllTallHits([]); setAllNumbersHits([]);
     setCurrentShooterIdx(0); setAutoRolling(false); setShooterPaused(true);
+    setConsecutivePSOs(0);
     betTracker.current = { smart: 0, ok: 0, trash: 0, smartAmt: 0, okAmt: 0, trashAmt: 0, total: 0, onStrat: 0, offStrat: 0, peak: startingBankroll, trough: startingBankroll };
   };
 

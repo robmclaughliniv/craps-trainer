@@ -42,6 +42,16 @@ export function getFieldHE(payOn12) {
   return payOn12 === 2 ? 5.56 : 2.78;
 }
 
+export const HOUSE_EDGES_PER_ROLL = {
+  pass: 0.42, dontPass: 0.40, come: 0.42, dontCome: 0.40, odds: 0,
+  place6: 0.46, place8: 0.46, place5: 1.11, place9: 1.11, place4: 1.67, place10: 1.67,
+  field: 5.56,
+  hardway6: 2.78, hardway8: 2.78, hardway4: 2.78, hardway10: 2.78,
+  any7: 16.67, anyCraps: 11.11, yo: 11.11, boxcars: 13.89, aces: 13.89,
+  buy4: 0.42, buy10: 0.42, horn: 12.5, ce: 11.11,
+  allSmall: 7.76, allTall: 7.76, allNumbers: 7.76,
+};
+
 export const SMART_BETS = new Set(["pass", "dontPass", "come", "dontCome", "passOdds", "dontPassOdds", "place6", "place8"]);
 export const OK_BETS = new Set(["field", "place5", "place9", "buy4", "buy10"]);
 

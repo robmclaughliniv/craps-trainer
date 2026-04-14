@@ -57,6 +57,7 @@ export function completeCrapsRoll(ctx) {
     autoRollTimerRef,
     soundEnabled,
     fieldPayOn12 = 3,
+    setConsecutivePSOs,
   } = ctx;
 
   setDie1(d1); setDie2(d2); lastRollRef.current = { d1, d2, total };
@@ -96,7 +97,7 @@ export function completeCrapsRoll(ctx) {
     setDontComePoints(newDCP);
   }
   if (phase === "comeout") {
-    if (total === 7 || total === 11) { if (bets.pass > 0) { const w = win("pass",bets.pass); results.push(`Pass WIN +$${w}`); } if (bets.dontPass > 0) { const l = lose("dontPass"); results.push(`DP LOSE -$${l}`); } if (bets.passOdds > 0) push("passOdds"); if (bets.dontPassOdds > 0) push("dontPassOdds"); addLog(`🎲 ${d1}+${d2}=${total} [${currentShooter.name}] — ${total===7?"SEVEN":"YO!"} ${results.join(" | ")}`, results.some(r=>r.includes("WIN"))?"win":"lose"); }
+    if (total === 7 || total === 11) { if (bets.pass > 0) { const w = win("pass",bets.pass); results.push(`Pass WIN +$${w}`); } if (bets.dontPass > 0) { const l = lose("dontPass"); results.push(`DP LOSE -$${l}`); } if (bets.passOdds > 0) push("passOdds"); if (bets.dontPassOdds > 0) push("dontPassOdds"); if (setConsecutivePSOs) setConsecutivePSOs(0); addLog(`🎲 ${d1}+${d2}=${total} [${currentShooter.name}] — ${total===7?"SEVEN":"YO!"} ${results.join(" | ")}`, results.some(r=>r.includes("WIN"))?"win":"lose"); }
     else if ([2,3,12].includes(total)) { if (bets.pass > 0) { const l = lose("pass"); results.push(`Pass LOSE -$${l}`); } if (bets.dontPass > 0) { if (total===12) { push("dontPass"); results.push("DP PUSH"); } else { const w = win("dontPass",bets.dontPass); results.push(`DP WIN +$${w}`); } } if (bets.passOdds > 0) push("passOdds"); if (bets.dontPassOdds > 0) push("dontPassOdds"); addLog(`🎲 ${d1}+${d2}=${total} [${currentShooter.name}] — CRAPS! ${results.join(" | ")}`, results.some(r=>r.includes("WIN"))?"win":"lose"); }
     else { setPoint(total); setPhase("point"); results.push(`Point: ${total}`); addLog(`🎲 ${d1}+${d2}=${total} [${currentShooter.name}] — Point set: ${total}. ${results.join(" | ")}`, "point"); }
   } else {
@@ -105,12 +106,14 @@ export function completeCrapsRoll(ctx) {
       if (bets.passOdds > 0) { const [n,d] = ODDS_PAY[point]; const w = win("passOdds",Math.floor(bets.passOdds*n/d)); results.push(`Odds WIN +$${w}`); }
       if (bets.dontPass > 0) { const l = lose("dontPass"); results.push(`DP LOSE -$${l}`); }
       if (bets.dontPassOdds > 0) { const l = lose("dontPassOdds"); results.push(`DPO LOSE -$${l}`); }
+      if (setConsecutivePSOs) setConsecutivePSOs(0);
       setPoint(null); setPhase("comeout"); addLog(`🎲 ${d1}+${d2}=${total} [${currentShooter.name}] — HIT THE POINT! ${results.join(" | ")}`, "win");
     } else if (total === 7) {
       if (bets.pass > 0) { const l = lose("pass"); results.push(`Pass LOSE -$${l}`); }
       if (bets.passOdds > 0) { const l = lose("passOdds"); results.push(`Odds LOSE -$${l}`); }
       if (bets.dontPass > 0) { const w = win("dontPass",bets.dontPass); results.push(`DP WIN +$${w}`); }
       if (bets.dontPassOdds > 0) { const [n,d] = ODDS_PAY[point]; const w = win("dontPassOdds",Math.floor(bets.dontPassOdds*d/n)); results.push(`DPO WIN +$${w}`); }
+      if (setConsecutivePSOs) setConsecutivePSOs(p => p + 1);
       setComePoints([]); setDontComePoints([]); setPoint(null); setPhase("comeout");
       if (rotationEnabled) {
         setCurrentShooterIdx((prev) => (prev + 1) % SHOOTERS.length);

@@ -41,10 +41,20 @@ export function getLocalInstinct(snap) {
   if (br < sb * 0.5)
     return { instinct: "When you're below half your buy-in, stop adding bets. Play what's on the table and let it resolve.", why: "Below 50% means you can't survive many more seven-outs. Preservation mode.", action: "No new bets. Let existing positions play out.", risk: "high", risk_note: "At " + Math.round(br/sb*100) + "% of buy-in.", warnings: "Tightening up is the smart play here." };
 
+  const psos = snap.consecutivePSOs || 0;
+  if (psos >= 5)
+    return { instinct: "Five seven-outs in a row is what variance looks like — but your bankroll has taken real damage. Check your numbers before the next bet.", why: "Dice have no memory. The next shooter's odds are identical. The problem isn't the table — it's how much of your bankroll has been consumed.", action: "Stop. Add up what you've actually lost and decide whether to stay.", risk: "high", risk_note: psos + " PSOs in a row.", warnings: "This is your stop-loss decision point." };
+  if (psos >= 3)
+    return { instinct: "Three seven-outs in a row. Reminder: dice have no memory — the next shooter isn't 'due.' But three losses in a row often means you're tilting.", why: "Tilt is the real risk after consecutive losses. Your stop-loss is closer than it feels.", action: "Take a breath. Worth a short break before the next bet?", risk: "medium", risk_note: "3 PSOs — tilt risk, not pattern risk.", warnings: null };
+
   if (hasBadBets)
     return { instinct: "When you put money in the center of the table, you're paying 11-17% edge. That's not strategy, it's a donation.", why: "Any 7 is 16.67% edge. Props look exciting but the math is brutal.", action: "Remove prop bets. Move that money to odds instead.", risk: "high", risk_note: "Prop bets are dragging your efficiency down.", warnings: "Center bets are the casino's rent money." };
   if (hasHardways)
     return { instinct: "When you bet Hardways, you need one exact combination to win vs many ways to lose.", why: "Hard 6: 1 way to win, 10 ways to lose (5 easy + 6 sevens). That's 9.09% edge.", action: "Hardways are fun money only. Never a core bet.", risk: "high", risk_note: "Hardway edge is 9-11%.", warnings: null };
+
+  const isIronCross = b.field > 0 && b.place5 > 0 && b.place6 > 0 && b.place8 > 0;
+  if (isIronCross && !snap.activeStrategy)
+    return { instinct: "When you build an Iron Cross, you're getting an 83% hit rate but paying 6-10× more than Pass+Odds.", why: "You win on every number except 7 — it feels great. But the 7 wipes everything, and over time the blended edge is brutal.", action: "It's a legit fun choice if you know what you're paying. Just don't mistake it for strategy.", risk: "medium", risk_note: "Iron Cross detected — entertainment density at the cost of EV.", warnings: null };
 
   if (riskPct > 25)
     return { instinct: "When more than 20% of your bankroll is at risk on one seven-out, you're overexposed.", why: riskPct + "% of your bankroll disappears if a 7 rolls right now.", action: "Stop adding bets. Consider taking down Place bets.", risk: "high", risk_note: "$" + risk + " at risk out of $" + br + " bankroll.", warnings: "One bad roll and you're in danger zone." };

@@ -1,4 +1,4 @@
-import { HOUSE_EDGES, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
+import { HOUSE_EDGES, HOUSE_EDGES_PER_ROLL, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
 import BetButton from "./BetButton.jsx";
 import Badge from "./Badge.jsx";
 
@@ -42,45 +42,45 @@ export default function BetPanel({
       </div>
       <div style={{ ...pnl_, borderRadius: "0 0 8px 8px", borderTop: "none", padding: "8px 12px", minHeight: 120 }}>
         {tab === "line" && <>
-          <BetButton label="Pass Line" he={HOUSE_EDGES.pass} amount={bets.pass} onBet={() => placeBet("pass")} onRemove={() => removeBet("pass")} disabled={phase === "point" && bets.pass === 0} />
-          <BetButton label={`Pass Odds${point ? ` (${bets.passOdds}/${getMaxOddsAmt(maxOdds, bets.pass, point)})` : ""}`} he={HOUSE_EDGES.odds} amount={bets.passOdds} onBet={() => placeBet("passOdds")} onRemove={() => removeBet("passOdds")} disabled={bets.pass === 0 || phase === "comeout" || (point && bets.passOdds >= getMaxOddsAmt(maxOdds, bets.pass, point))} />
-          <BetButton label="Don't Pass" he={HOUSE_EDGES.dontPass} amount={bets.dontPass} onBet={() => placeBet("dontPass")} onRemove={() => removeBet("dontPass")} disabled={phase === "point" && bets.dontPass === 0} />
-          <BetButton label={`DP Odds${point ? ` (${bets.dontPassOdds}/${getMaxOddsAmt(maxOdds, bets.dontPass, point)})` : ""}`} he={HOUSE_EDGES.odds} amount={bets.dontPassOdds} onBet={() => placeBet("dontPassOdds")} onRemove={() => removeBet("dontPassOdds")} disabled={bets.dontPass === 0 || phase === "comeout" || (point && bets.dontPassOdds >= getMaxOddsAmt(maxOdds, bets.dontPass, point))} />
+          <BetButton label="Pass Line" he={HOUSE_EDGES.pass} perRollHe={HOUSE_EDGES_PER_ROLL.pass} amount={bets.pass} onBet={() => placeBet("pass")} onRemove={() => removeBet("pass")} disabled={phase === "point" && bets.pass === 0} />
+          <BetButton label={`Pass Odds${point ? ` (${bets.passOdds}/${getMaxOddsAmt(maxOdds, bets.pass, point)})` : ""}`} he={HOUSE_EDGES.odds} perRollHe={HOUSE_EDGES_PER_ROLL.odds} amount={bets.passOdds} onBet={() => placeBet("passOdds")} onRemove={() => removeBet("passOdds")} disabled={bets.pass === 0 || phase === "comeout" || (point && bets.passOdds >= getMaxOddsAmt(maxOdds, bets.pass, point))} />
+          <BetButton label="Don't Pass" he={HOUSE_EDGES.dontPass} perRollHe={HOUSE_EDGES_PER_ROLL.dontPass} amount={bets.dontPass} onBet={() => placeBet("dontPass")} onRemove={() => removeBet("dontPass")} disabled={phase === "point" && bets.dontPass === 0} />
+          <BetButton label={`DP Odds${point ? ` (${bets.dontPassOdds}/${getMaxOddsAmt(maxOdds, bets.dontPass, point)})` : ""}`} he={HOUSE_EDGES.odds} perRollHe={HOUSE_EDGES_PER_ROLL.odds} amount={bets.dontPassOdds} onBet={() => placeBet("dontPassOdds")} onRemove={() => removeBet("dontPassOdds")} disabled={bets.dontPass === 0 || phase === "comeout" || (point && bets.dontPassOdds >= getMaxOddsAmt(maxOdds, bets.dontPass, point))} />
           <div style={{ height: 8 }} />
-          <BetButton label="Come" he={HOUSE_EDGES.come} amount={bets.come} onBet={() => placeBet("come")} onRemove={() => removeBet("come")} disabled={phase === "comeout"} />
-          <BetButton label="Don't Come" he={HOUSE_EDGES.dontCome} amount={bets.dontCome} onBet={() => placeBet("dontCome")} onRemove={() => removeBet("dontCome")} disabled={phase === "comeout"} />
+          <BetButton label="Come" he={HOUSE_EDGES.come} perRollHe={HOUSE_EDGES_PER_ROLL.come} amount={bets.come} onBet={() => placeBet("come")} onRemove={() => removeBet("come")} disabled={phase === "comeout"} />
+          <BetButton label="Don't Come" he={HOUSE_EDGES.dontCome} perRollHe={HOUSE_EDGES_PER_ROLL.dontCome} amount={bets.dontCome} onBet={() => placeBet("dontCome")} onRemove={() => removeBet("dontCome")} disabled={phase === "comeout"} />
           {(comePoints.length > 0 || dontComePoints.length > 0) && <div style={{ fontSize: 10, color: "#555", marginTop: 4, fontStyle: "italic" }}>Manage come/DC odds in Active Bets below ↓</div>}
         </>}
         {tab === "place" && <>
-          <BetButton label="Place 6" he={HOUSE_EDGES.place6} amount={bets.place6} onBet={() => placeBet("place6")} onRemove={() => removeBet("place6")} disabled={phase === "comeout"} />
-          <BetButton label="Place 8" he={HOUSE_EDGES.place8} amount={bets.place8} onBet={() => placeBet("place8")} onRemove={() => removeBet("place8")} disabled={phase === "comeout"} />
-          <BetButton label="Place 5" he={HOUSE_EDGES.place5} amount={bets.place5} onBet={() => placeBet("place5")} onRemove={() => removeBet("place5")} disabled={phase === "comeout"} />
-          <BetButton label="Place 9" he={HOUSE_EDGES.place9} amount={bets.place9} onBet={() => placeBet("place9")} onRemove={() => removeBet("place9")} disabled={phase === "comeout"} />
-          <BetButton label="Place 4" he={HOUSE_EDGES.place4} amount={bets.place4} onBet={() => placeBet("place4")} onRemove={() => removeBet("place4")} disabled={phase === "comeout"} />
-          <BetButton label="Place 10" he={HOUSE_EDGES.place10} amount={bets.place10} onBet={() => placeBet("place10")} onRemove={() => removeBet("place10")} disabled={phase === "comeout"} />
+          <BetButton label="Place 6" he={HOUSE_EDGES.place6} perRollHe={HOUSE_EDGES_PER_ROLL.place6} amount={bets.place6} onBet={() => placeBet("place6")} onRemove={() => removeBet("place6")} disabled={phase === "comeout"} />
+          <BetButton label="Place 8" he={HOUSE_EDGES.place8} perRollHe={HOUSE_EDGES_PER_ROLL.place8} amount={bets.place8} onBet={() => placeBet("place8")} onRemove={() => removeBet("place8")} disabled={phase === "comeout"} />
+          <BetButton label="Place 5" he={HOUSE_EDGES.place5} perRollHe={HOUSE_EDGES_PER_ROLL.place5} amount={bets.place5} onBet={() => placeBet("place5")} onRemove={() => removeBet("place5")} disabled={phase === "comeout"} />
+          <BetButton label="Place 9" he={HOUSE_EDGES.place9} perRollHe={HOUSE_EDGES_PER_ROLL.place9} amount={bets.place9} onBet={() => placeBet("place9")} onRemove={() => removeBet("place9")} disabled={phase === "comeout"} />
+          <BetButton label="Place 4" he={HOUSE_EDGES.place4} perRollHe={HOUSE_EDGES_PER_ROLL.place4} amount={bets.place4} onBet={() => placeBet("place4")} onRemove={() => removeBet("place4")} disabled={phase === "comeout"} />
+          <BetButton label="Place 10" he={HOUSE_EDGES.place10} perRollHe={HOUSE_EDGES_PER_ROLL.place10} amount={bets.place10} onBet={() => placeBet("place10")} onRemove={() => removeBet("place10")} disabled={phase === "comeout"} />
           <div style={{ height: 8 }} />
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>BUY BETS (true odds - 5% vig)</div>
-          <BetButton label="Buy 4" he={getBuyHE(4, buyVigPolicy)} amount={bets.buy4} onBet={() => placeBet("buy4")} onRemove={() => removeBet("buy4")} disabled={phase === "comeout"} />
-          <BetButton label="Buy 10" he={getBuyHE(10, buyVigPolicy)} amount={bets.buy10} onBet={() => placeBet("buy10")} onRemove={() => removeBet("buy10")} disabled={phase === "comeout"} />
+          <BetButton label="Buy 4" he={getBuyHE(4, buyVigPolicy)} perRollHe={HOUSE_EDGES_PER_ROLL.buy4} amount={bets.buy4} onBet={() => placeBet("buy4")} onRemove={() => removeBet("buy4")} disabled={phase === "comeout"} />
+          <BetButton label="Buy 10" he={getBuyHE(10, buyVigPolicy)} perRollHe={HOUSE_EDGES_PER_ROLL.buy10} amount={bets.buy10} onBet={() => placeBet("buy10")} onRemove={() => removeBet("buy10")} disabled={phase === "comeout"} />
           <div style={{ fontSize: 11, color: "#555", marginTop: 8, fontStyle: "italic" }}>Place 6/8 use $6 increments. Buy 4/10 beats Place 4/10 (4.76% vs 6.67%).</div>
         </>}
         {tab === "props" && <>
-          <BetButton label="Field" he={getFieldHE(fieldPayOn12)} amount={bets.field} onBet={() => placeBet("field")} onRemove={() => removeBet("field")} />
+          <BetButton label="Field" he={getFieldHE(fieldPayOn12)} perRollHe={HOUSE_EDGES_PER_ROLL.field} amount={bets.field} onBet={() => placeBet("field")} onRemove={() => removeBet("field")} />
           <div style={{ height: 4 }} />
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>ONE-ROLL PROPS</div>
-          <BetButton label="Any 7" he={HOUSE_EDGES.any7} amount={bets.any7} onBet={() => placeBet("any7")} onRemove={() => removeBet("any7")} mini />
-          <BetButton label="Any Craps" he={HOUSE_EDGES.anyCraps} amount={bets.anyCraps} onBet={() => placeBet("anyCraps")} onRemove={() => removeBet("anyCraps")} mini />
-          <BetButton label="Yo (11)" he={HOUSE_EDGES.yo} amount={bets.yo} onBet={() => placeBet("yo")} onRemove={() => removeBet("yo")} mini />
-          <BetButton label="Boxcars (12)" he={HOUSE_EDGES.boxcars} amount={bets.boxcars} onBet={() => placeBet("boxcars")} onRemove={() => removeBet("boxcars")} mini />
-          <BetButton label="Horn ($4)" he={HOUSE_EDGES.horn} amount={bets.horn} onBet={() => placeBet("horn")} onRemove={() => removeBet("horn")} mini />
-          <BetButton label="C&E" he={HOUSE_EDGES.ce} amount={bets.ce} onBet={() => placeBet("ce")} onRemove={() => removeBet("ce")} mini />
-          <BetButton label="Aces (2)" he={HOUSE_EDGES.aces} amount={bets.aces} onBet={() => placeBet("aces")} onRemove={() => removeBet("aces")} mini />
+          <BetButton label="Any 7" he={HOUSE_EDGES.any7} perRollHe={HOUSE_EDGES_PER_ROLL.any7} amount={bets.any7} onBet={() => placeBet("any7")} onRemove={() => removeBet("any7")} mini />
+          <BetButton label="Any Craps" he={HOUSE_EDGES.anyCraps} perRollHe={HOUSE_EDGES_PER_ROLL.anyCraps} amount={bets.anyCraps} onBet={() => placeBet("anyCraps")} onRemove={() => removeBet("anyCraps")} mini />
+          <BetButton label="Yo (11)" he={HOUSE_EDGES.yo} perRollHe={HOUSE_EDGES_PER_ROLL.yo} amount={bets.yo} onBet={() => placeBet("yo")} onRemove={() => removeBet("yo")} mini />
+          <BetButton label="Boxcars (12)" he={HOUSE_EDGES.boxcars} perRollHe={HOUSE_EDGES_PER_ROLL.boxcars} amount={bets.boxcars} onBet={() => placeBet("boxcars")} onRemove={() => removeBet("boxcars")} mini />
+          <BetButton label="Horn ($4)" he={HOUSE_EDGES.horn} perRollHe={HOUSE_EDGES_PER_ROLL.horn} amount={bets.horn} onBet={() => placeBet("horn")} onRemove={() => removeBet("horn")} mini />
+          <BetButton label="C&E" he={HOUSE_EDGES.ce} perRollHe={HOUSE_EDGES_PER_ROLL.ce} amount={bets.ce} onBet={() => placeBet("ce")} onRemove={() => removeBet("ce")} mini />
+          <BetButton label="Aces (2)" he={HOUSE_EDGES.aces} perRollHe={HOUSE_EDGES_PER_ROLL.aces} amount={bets.aces} onBet={() => placeBet("aces")} onRemove={() => removeBet("aces")} mini />
         </>}
         {tab === "bonus" && <>
-          <BetButton label="Hard 6" he={HOUSE_EDGES.hardway6} amount={bets.hardway6} onBet={() => placeBet("hardway6")} onRemove={() => removeBet("hardway6")} />
-          <BetButton label="Hard 8" he={HOUSE_EDGES.hardway8} amount={bets.hardway8} onBet={() => placeBet("hardway8")} onRemove={() => removeBet("hardway8")} />
-          <BetButton label="Hard 4" he={HOUSE_EDGES.hardway4} amount={bets.hardway4} onBet={() => placeBet("hardway4")} onRemove={() => removeBet("hardway4")} />
-          <BetButton label="Hard 10" he={HOUSE_EDGES.hardway10} amount={bets.hardway10} onBet={() => placeBet("hardway10")} onRemove={() => removeBet("hardway10")} />
+          <BetButton label="Hard 6" he={HOUSE_EDGES.hardway6} perRollHe={HOUSE_EDGES_PER_ROLL.hardway6} amount={bets.hardway6} onBet={() => placeBet("hardway6")} onRemove={() => removeBet("hardway6")} />
+          <BetButton label="Hard 8" he={HOUSE_EDGES.hardway8} perRollHe={HOUSE_EDGES_PER_ROLL.hardway8} amount={bets.hardway8} onBet={() => placeBet("hardway8")} onRemove={() => removeBet("hardway8")} />
+          <BetButton label="Hard 4" he={HOUSE_EDGES.hardway4} perRollHe={HOUSE_EDGES_PER_ROLL.hardway4} amount={bets.hardway4} onBet={() => placeBet("hardway4")} onRemove={() => removeBet("hardway4")} />
+          <BetButton label="Hard 10" he={HOUSE_EDGES.hardway10} perRollHe={HOUSE_EDGES_PER_ROLL.hardway10} amount={bets.hardway10} onBet={() => placeBet("hardway10")} onRemove={() => removeBet("hardway10")} />
           <div style={{ height: 8 }} />
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>ALL BETS (multi-roll, lose on 7)</div>
           {[

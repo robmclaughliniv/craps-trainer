@@ -1,7 +1,7 @@
 import { ratingColor } from "../lib/betLogic.js";
 import Badge from "./Badge.jsx";
 
-export default function BetButton({ label, he, amount, onBet, onRemove, disabled, mini }) {
+export default function BetButton({ label, he, perRollHe, amount, onBet, onRemove, disabled, mini }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
@@ -16,7 +16,7 @@ export default function BetButton({ label, he, amount, onBet, onRemove, disabled
           {label} {amount > 0 && <span style={{ color: ratingColor(he) }}>${amount}</span>}
         </div>
       </div>
-      <Badge he={he} />
+      <Badge he={he} perRollHe={perRollHe} />
       <div style={{ display: "flex", gap: 3 }}>
         <button onClick={onBet} disabled={disabled} style={{
           padding: "3px 10px", fontSize: 11, borderRadius: 4,
