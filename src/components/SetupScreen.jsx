@@ -33,7 +33,7 @@ export default function SetupScreen({
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 14, letterSpacing: ".2em", color: "#4caf50", fontWeight: 600, marginBottom: 8 }}>CRAPS TRAINER</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Session Setup</div>
-          <div style={{ fontSize: 13, color: "#666" }}>You&apos;re at a table with Mike, Sarah & Tom. Dice rotate on seven-outs.</div>
+          <div style={{ fontSize: 13, color: "#666" }}>Practice at your own pace. Enable multiplayer in-game to rotate shooters.</div>
         </div>
         <div style={{ ...pnl_, padding: 28 }}>
           <label style={{ fontSize: 12, color: "#888", fontWeight: 600, letterSpacing: ".1em", display: "block", marginBottom: 8 }}>BANKROLL</label>
@@ -94,7 +94,7 @@ export default function SetupScreen({
           </div>
           <button onClick={() => setShowSetup(false)} style={{ width: "100%", padding: "14px 0", borderRadius: 10, fontSize: 16, fontWeight: 700, background: "linear-gradient(135deg,#2e7d32,#4caf50)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(76,175,80,.3)" }}>Start Session →</button>
         </div>
-        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#555" }}>You shoot first. Seven-out passes dice clockwise.</div>
+        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#555" }}>You shoot every roll by default. Toggle 👥 in-game for multiplayer.</div>
       </div>
     </div>
   );

@@ -12,16 +12,28 @@ export default function TableView({
   allSmallHits,
   allTallHits,
   allNumbersHits,
+  large = false,
 }) {
+  const chipSmall = large ? 26 : 20;
+  const chipLarge = large ? 30 : 24;
+  const oddsSize = large ? 22 : 18;
+  const puckSize = large ? 26 : 22;
+  const placeMinH = large ? 58 : 48;
+  const placeFont = large ? 16 : 14;
+  const labelFont = large ? 10 : 9;
+  const smallLabelFont = large ? 9 : 8;
+  const headerFont = large ? 11 : 10;
+  const feltPad = large ? 10 : 8;
+
   const Chip = ({ amount, color = "#4caf50", small }) => {
     if (!amount || amount <= 0) return null;
-    const sz = small ? 20 : 24;
+    const sz = small ? chipSmall : chipLarge;
     return (
       <div style={{
         width: sz, height: sz, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
         background: `radial-gradient(circle at 35% 35%, ${color}, ${color}aa)`,
         border: `2px solid ${color}dd`, boxShadow: "0 2px 6px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.3)",
-        fontSize: small ? 7 : 8, fontWeight: 700, color: "#fff", fontFamily: mono, lineHeight: 1,
+        fontSize: small ? (large ? 8 : 7) : (large ? 9 : 8), fontWeight: 700, color: "#fff", fontFamily: mono, lineHeight: 1,
         position: "relative", zIndex: 2,
       }}>{amount}</div>
     );
@@ -31,20 +43,20 @@ export default function TableView({
     if (!amount || amount <= 0) return null;
     return (
       <div style={{
-        width: 18, height: 18, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+        width: oddsSize, height: oddsSize, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
         background: "radial-gradient(circle at 35% 35%, #00e676, #00c853aa)",
         border: "2px solid #00e676bb", boxShadow: "0 1px 4px rgba(0,0,0,.4)",
-        fontSize: 7, fontWeight: 700, color: "#fff", fontFamily: mono,
-        position: "absolute", bottom: -6, right: -6, zIndex: 3,
+        fontSize: large ? 8 : 7, fontWeight: 700, color: "#fff", fontFamily: mono,
+        position: "absolute", bottom: large ? -8 : -6, right: large ? -8 : -6, zIndex: 3,
       }}>{amount}</div>
     );
   };
 
   const Puck = ({ on }) => (
     <div style={{
-      width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+      width: puckSize, height: puckSize, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
       background: on ? "#fff" : "#333", border: `2px solid ${on ? "#fff" : "#555"}`,
-      fontSize: 7, fontWeight: 800, color: on ? "#000" : "#888", fontFamily: mono,
+      fontSize: large ? 8 : 7, fontWeight: 800, color: on ? "#000" : "#888", fontFamily: mono,
       boxShadow: on ? "0 0 8px rgba(255,255,255,.5)" : "none",
     }}>{on ? "ON" : "OFF"}</div>
   );
@@ -60,12 +72,14 @@ export default function TableView({
 
   return (
     <div style={{ ...pnl_, padding: 0, overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#666", padding: "8px 12px 4px" }}>TABLE VIEW</div>
+      {!large && (
+        <div style={{ fontSize: headerFont, fontWeight: 700, letterSpacing: ".1em", color: "#666", padding: "8px 12px 4px" }}>TABLE VIEW</div>
+      )}
 
-      <div style={{ background: feltGreen, padding: 8, borderRadius: "0 0 8px 8px", position: "relative" }}>
+      <div style={{ background: feltGreen, padding: feltPad, borderRadius: large ? 8 : "0 0 8px 8px", position: "relative" }}>
 
-        <div style={{ display: "flex", alignItems: "center", padding: "4px 6px", borderRadius: "6px 6px 0 0", border: cellBorder, borderBottom: "none", background: "rgba(0,0,0,.15)", marginBottom: 0 }}>
-          <div style={{ flex: 1, fontSize: 9, fontWeight: 600, color: "#ccc", letterSpacing: ".05em" }}>DON&apos;T PASS BAR</div>
+        <div style={{ display: "flex", alignItems: "center", padding: large ? "6px 8px" : "4px 6px", borderRadius: "6px 6px 0 0", border: cellBorder, borderBottom: "none", background: "rgba(0,0,0,.15)", marginBottom: 0 }}>
+          <div style={{ flex: 1, fontSize: labelFont, fontWeight: 600, color: "#ccc", letterSpacing: ".05em" }}>DON&apos;T PASS BAR</div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <Chip amount={bets.dontPass} color="#f44336" small />
             {bets.dontPassOdds > 0 && <Chip amount={bets.dontPassOdds} color="#00e676" small />}
@@ -80,13 +94,13 @@ export default function TableView({
             const hasDc = !!dcByNum[num];
             return (
               <div key={num} style={{
-                flex: 1, padding: "6px 2px", textAlign: "center",
+                flex: 1, padding: large ? "8px 2px" : "6px 2px", textAlign: "center",
                 borderRight: num !== 10 ? cellBorder : "none",
                 background: isPoint ? "rgba(255,255,255,.08)" : "transparent",
-                position: "relative", minHeight: 48,
+                position: "relative", minHeight: placeMinH,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
               }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: isPoint ? "#fff" : "#ffffffbb", fontFamily: mono }}>{num === 6 ? "SIX" : num === 8 ? "EIGHT" : num}</div>
+                <div style={{ fontSize: placeFont, fontWeight: 800, color: isPoint ? "#fff" : "#ffffffbb", fontFamily: mono }}>{num === 6 ? "SIX" : num === 8 ? "EIGHT" : num}</div>
                 {isPoint && <div style={{ position: "absolute", top: 2, right: 2 }}><Puck on={true} /></div>}
                 <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
                   {hasPlace && <Chip amount={bets[`place${num}`]} color="#ffc107" small />}
@@ -109,25 +123,25 @@ export default function TableView({
         </div>
 
         <div style={{ display: "flex", border: cellBorder, borderBottom: "none" }}>
-          <div style={{ flex: 2, padding: "5px 6px", display: "flex", alignItems: "center", justifyContent: "space-between", borderRight: cellBorder }}>
-            <span style={{ fontSize: 9, fontWeight: 600, color: "#ccc" }}>COME</span>
+          <div style={{ flex: 2, padding: large ? "6px 8px" : "5px 6px", display: "flex", alignItems: "center", justifyContent: "space-between", borderRight: cellBorder }}>
+            <span style={{ fontSize: labelFont, fontWeight: 600, color: "#ccc" }}>COME</span>
             <Chip amount={bets.come} color="#4caf50" small />
           </div>
-          <div style={{ flex: 1, padding: "5px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 8, fontWeight: 600, color: "#ccc" }}>DC</span>
+          <div style={{ flex: 1, padding: large ? "6px 8px" : "5px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: smallLabelFont, fontWeight: 600, color: "#ccc" }}>DC</span>
             <Chip amount={bets.dontCome} color="#f44336" small />
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 6px", border: cellBorder, borderBottom: "none", background: "rgba(0,0,0,.1)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: large ? "6px 8px" : "5px 6px", border: cellBorder, borderBottom: "none", background: "rgba(0,0,0,.1)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: "#ccc" }}>FIELD</span>
-            <span style={{ fontSize: 7, color: "#ffffff88" }}>2·3·4·9·10·11·12</span>
+            <span style={{ fontSize: labelFont, fontWeight: 700, color: "#ccc" }}>FIELD</span>
+            <span style={{ fontSize: smallLabelFont, color: "#ffffff88" }}>2·3·4·9·10·11·12</span>
           </div>
           <Chip amount={bets.field} color="#8bc34a" small />
         </div>
 
-        <div style={{ border: cellBorder, borderBottom: "none", padding: "4px 6px", background: "rgba(0,0,0,.2)" }}>
+        <div style={{ border: cellBorder, borderBottom: "none", padding: large ? "6px 8px" : "4px 6px", background: "rgba(0,0,0,.2)" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
             {[
               { label: "Hard 4", k: "hardway4" }, { label: "Hard 6", k: "hardway6" },
@@ -139,29 +153,29 @@ export default function TableView({
               if (!amt || amt <= 0) return null;
               return (
                 <div key={p.k} style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 5px", borderRadius: 4, background: "rgba(255,255,255,.06)" }}>
-                  <span style={{ fontSize: 8, color: "#aaa" }}>{p.label}</span>
+                  <span style={{ fontSize: smallLabelFont, color: "#aaa" }}>{p.label}</span>
                   <Chip amount={amt} color={p.k.includes("hard") ? "#e040fb" : "#ff5722"} small />
                 </div>
               );
             })}
             {!["hardway4", "hardway6", "hardway8", "hardway10", "any7", "anyCraps", "yo", "boxcars", "aces", "horn", "ce", "buy4", "buy10"].some((k) => bets[k] > 0) && (
-              <span style={{ fontSize: 8, color: "#ffffff44", fontStyle: "italic" }}>center bets</span>
+              <span style={{ fontSize: smallLabelFont, color: "#ffffff44", fontStyle: "italic" }}>center bets</span>
             )}
           </div>
         </div>
 
         {(allSmallBet > 0 || allTallBet > 0 || allNumbersBet > 0) && (
-          <div style={{ border: cellBorder, borderBottom: "none", padding: "4px 6px", background: "rgba(0,0,0,.15)" }}>
+          <div style={{ border: cellBorder, borderBottom: "none", padding: large ? "6px 8px" : "4px 6px", background: "rgba(0,0,0,.15)" }}>
             <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
-              {allSmallBet > 0 && <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>SMALL ${allSmallBet} ({allSmallHits.length}/5)</span>}
-              {allTallBet > 0 && <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>TALL ${allTallBet} ({allTallHits.length}/5)</span>}
-              {allNumbersBet > 0 && <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>ALL ${allNumbersBet} ({allNumbersHits.length}/10)</span>}
+              {allSmallBet > 0 && <span style={{ fontSize: smallLabelFont, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>SMALL ${allSmallBet} ({allSmallHits.length}/5)</span>}
+              {allTallBet > 0 && <span style={{ fontSize: smallLabelFont, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>TALL ${allTallBet} ({allTallHits.length}/5)</span>}
+              {allNumbersBet > 0 && <span style={{ fontSize: smallLabelFont, padding: "2px 6px", borderRadius: 3, background: "rgba(255,152,0,.15)", color: "#ff9800", fontFamily: mono, fontWeight: 600 }}>ALL ${allNumbersBet} ({allNumbersHits.length}/10)</span>}
             </div>
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", padding: "6px 6px", borderRadius: "0 0 4px 4px", border: cellBorder, background: "rgba(0,0,0,.1)" }}>
-          <div style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: ".05em" }}>PASS LINE</div>
+        <div style={{ display: "flex", alignItems: "center", padding: large ? "8px 8px" : "6px 6px", borderRadius: "0 0 4px 4px", border: cellBorder, background: "rgba(0,0,0,.1)" }}>
+          <div style={{ flex: 1, fontSize: large ? 11 : 10, fontWeight: 700, color: "#fff", letterSpacing: ".05em" }}>PASS LINE</div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {phase === "comeout" && !point && <Puck on={false} />}
             <div style={{ position: "relative" }}>

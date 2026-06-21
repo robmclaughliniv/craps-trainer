@@ -32,6 +32,8 @@ import TrainerStat from "./components/TrainerStat.jsx";
 import ComePointPills from "./components/ComePointPills.jsx";
 import StrategyQuickRef from "./components/StrategyQuickRef.jsx";
 import GameRollButton from "./components/GameRollButton.jsx";
+import MobileBetDock from "./components/MobileBetDock.jsx";
+import MobileSheet from "./components/MobileSheet.jsx";
 
 export default function CrapsTrainer() {
   const winWidth = useWindowWidth();
@@ -64,7 +66,7 @@ export default function CrapsTrainer() {
   const [maxOdds, setMaxOdds] = useState("345x");
   const [activeStrategy, setActiveStrategy] = useState(null);
   const [lastRollNet, setLastRollNet] = useState(null);
-  const [mobileTab, setMobileTab] = useState("bets");
+  const [mobileSheet, setMobileSheet] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [allSmallBet, setAllSmallBet] = useState(0);
   const [allTallBet, setAllTallBet] = useState(0);
@@ -74,7 +76,7 @@ export default function CrapsTrainer() {
   const [allNumbersHits, setAllNumbersHits] = useState([]);
   const [consecutivePSOs, setConsecutivePSOs] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [rotationEnabled, setRotationEnabled] = useState(true);
+  const [rotationEnabled, setRotationEnabled] = useState(false);
 
   // ── SHOOTER ROTATION STATE ──
   const [currentShooterIdx, setCurrentShooterIdx] = useState(0);
@@ -531,12 +533,15 @@ export default function CrapsTrainer() {
     );
   }
 
-  const mTabs = [{id:"bets",label:"Bets"},{id:"position",label:"Position"},{id:"coach",label:"Coach"},{id:"more",label:"More"}];
   const lastEntry = log.length > 0 ? log[log.length - 1] : null;
   const riskTotal = totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
 
+  const toggleMobileSheet = (id) => {
+    setMobileSheet((prev) => (prev === id ? null : id));
+  };
+
   return (
-    <div style={{minHeight:"100vh",background:"#0a0a14",color:"#e0e0e0",fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{height:"100dvh",background:"#0a0a14",color:"#e0e0e0",fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
       <SessionScorecard
         showScorecard={showScorecard}
@@ -553,16 +558,80 @@ export default function CrapsTrainer() {
         onBack={() => setShowScorecard(false)}
       />
 
-      <div style={{position:"sticky",top:0,zIndex:10,background:"#0a0a14",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+      <MobileSheet sheet={mobileSheet} onClose={() => setMobileSheet(null)}>
+        {mobileSheet === "position" && <>
+          <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
+          <ActiveBets
+            pnl_={pnl_}
+            mono={mono}
+            bets={bets}
+            comePoints={comePoints}
+            dontComePoints={dontComePoints}
+            totalBets={totalBets}
+            comeTotal={comeTotal}
+            dcTotal={dcTotal}
+            maxOdds={maxOdds}
+            bankroll={bankroll}
+            betUnit={betUnit}
+            addComeOdds={addComeOdds}
+            removeComeOdds={removeComeOdds}
+            addDcOdds={addDcOdds}
+            removeDcOdds={removeDcOdds}
+            buyVigPolicy={buyVigPolicy}
+            fieldPayOn12={fieldPayOn12}
+          />
+          <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} buyVigPolicy={buyVigPolicy} fieldPayOn12={fieldPayOn12} />
+          <ExposureMap
+            pnl_={pnl_}
+            mono={mono}
+            maxOdds={maxOdds}
+            comeTotal={comeTotal}
+            dcTotal={dcTotal}
+            totalBets={totalBets}
+            calcOutcome={exposureCalc}
+          />
+          <StrategyGuide
+            pnl_={pnl_}
+            activeStrategy={activeStrategy}
+            setActiveStrategy={setActiveStrategy}
+            bets={bets}
+            phase={phase}
+            point={point}
+            betUnit={betUnit}
+            comePoints={comePoints}
+            maxOdds={maxOdds}
+            bankroll={bankroll}
+            tableMin={tableMin}
+          />
+        </>}
+        {mobileSheet === "coach" && <>
+          <CoachPanel
+            pnl_={pnl_}
+            coachAdvice={coachAdvice}
+            coachLoading={coachLoading}
+            coachEnabled={coachEnabled}
+            setCoachAdvice={setCoachAdvice}
+            setCoachEnabled={setCoachEnabled}
+            askCoach={askCoach}
+            buildSnapshot={buildSnapshot}
+          />
+        </>}
+        {mobileSheet === "history" && <>
+          <RollLog ref={logRef} log={log} mono={mono} height={240} />
+          <StrategyQuickRef pnl_={pnl_} showStrategy={showStrategy} setShowStrategy={setShowStrategy} />
+          <Footer onEndSession={() => { setMobileSheet(null); setShowScorecard(true); }} onReset={handleFooterReset} sessionWins={sessionWins} sessionLosses={sessionLosses} />
+        </>}
+      </MobileSheet>
 
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"rgba(10,10,20,.95)"}}>
+      <div style={{flexShrink:0,background:"#0a0a14",borderBottom:"1px solid rgba(255,255,255,.06)",paddingTop:"max(8px, env(safe-area-inset-top))"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 12px",background:"rgba(10,10,20,.95)"}}>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <PhaseTag phase={phase} point={point} mono={mono} />
             {rotationEnabled && <ShooterTag compact isBotShooter={isBotShooter} currentShooter={currentShooter} nextShooter={nextShooter} mono={mono} />}
-            <button onClick={()=>{const n=!rotationEnabled;setRotationEnabled(n);if(!n){setCurrentShooterIdx(0);setAutoRolling(false);setShooterPaused(true);if(autoRollTimerRef.current)clearTimeout(autoRollTimerRef.current);}}} style={{fontSize:12,background:"none",border:"none",cursor:"pointer",opacity:rotationEnabled?1:0.35,padding:0,lineHeight:1}}>👥</button>
+            <button onClick={()=>{const n=!rotationEnabled;setRotationEnabled(n);if(!n){setCurrentShooterIdx(0);setAutoRolling(false);setShooterPaused(true);if(autoRollTimerRef.current)clearTimeout(autoRollTimerRef.current);}}} style={{fontSize:12,background:"none",border:"none",cursor:"pointer",opacity:rotationEnabled?1:0.35,padding:0,lineHeight:1}} title={rotationEnabled?"Multiplayer on":"Solo mode"}>👥</button>
             <button onClick={()=>setSoundEnabled(!soundEnabled)} style={{fontSize:14,background:"none",border:"none",cursor:"pointer",opacity:soundEnabled?1:0.3,padding:0,lineHeight:1}}>{soundEnabled?"🔊":"🔇"}</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>BANK</div><div style={{fontSize:13,fontWeight:700,color:"#fff",fontFamily:mono}}>${bankroll}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>UNITS</div><div style={{fontSize:12,fontWeight:700,color:unitsColor,fontFamily:mono}}>{units}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>P&L</div><div style={{fontSize:12,fontWeight:700,color:pnl>=0?"#4caf50":"#f44336",fontFamily:mono}}>{pnl>=0?"+":""}{pnl}</div></div>
@@ -574,151 +643,83 @@ export default function CrapsTrainer() {
             </div>
           </div>
         </div>
-
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"10px 12px 6px",background:"radial-gradient(ellipse at center,rgba(30,60,30,.2) 0%,transparent 70%)"}}>
-          <Die value={die1} rolling={rolling} size={52} />
-          <Die value={die2} rolling={rolling} delay={.08} size={52} />
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:32}}>
-            <div style={{fontSize:22,fontWeight:700,color:"#fff",fontFamily:mono,lineHeight:1}}>{die1+die2}</div>
-          </div>
-          <GameRollButton onClick={handleRollButton} disabled={rolling || totalBets === 0} isDesktop={false} isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} />
-        </div>
-
-        <div style={{padding:"0 12px 8px"}}>
-          <ComePointPills comePoints={comePoints} dontComePoints={dontComePoints} mono={mono} />
-          {lastEntry && (
-            <div style={{fontSize:10,fontFamily:mono,textAlign:"center",lineHeight:1.3,padding:"4px 8px",borderRadius:4,background:"rgba(255,255,255,.02)",
-              color:lastEntry.type==="win"?"#4caf50":lastEntry.type==="lose"?"#f44336":lastEntry.type==="point"?"#ff9800":"#666",
-            }}>{lastEntry.msg}</div>
-          )}
-        </div>
         <BankrollZone compact pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
       </div>
 
-      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,.06)",background:"#0d0d18",flexShrink:0}}>
-          {mTabs.map(t=>(
-            <button key={t.id} onClick={()=>setMobileTab(t.id)} style={{
-              flex:1,padding:"9px 0",fontSize:11,fontWeight:600,
-              background:mobileTab===t.id?"rgba(76,175,80,.06)":"transparent",
-              color:mobileTab===t.id?"#4caf50":"#666",border:"none",cursor:"pointer",
-              borderBottom:mobileTab===t.id?"2px solid #4caf50":"2px solid transparent",
-              transition:"all .15s",
-            }}>{t.label}</button>
-          ))}
+      <div style={{flex:1,minHeight:0,overflowY:"auto",display:"flex",flexDirection:"column",justifyContent:"center",padding:"8px 12px",gap:8}}>
+        <div style={{width:"100%",maxWidth:440,margin:"0 auto"}}>
+          <TableView
+            large
+            pnl_={pnl_}
+            mono={mono}
+            bets={bets}
+            point={point}
+            phase={phase}
+            comePoints={comePoints}
+            dontComePoints={dontComePoints}
+            allSmallBet={allSmallBet}
+            allTallBet={allTallBet}
+            allNumbersBet={allNumbersBet}
+            allSmallHits={allSmallHits}
+            allTallHits={allTallHits}
+            allNumbersHits={allNumbersHits}
+          />
         </div>
 
-        <div style={{flex:1,overflowY:"auto",padding:12,display:"flex",flexDirection:"column",gap:10}}>
-          {mobileTab==="bets"&&<>
-            <BetPanel
-              pnl_={pnl_}
-              tab={tab}
-              setTab={setTab}
-              bets={bets}
-              placeBet={placeBet}
-              removeBet={removeBet}
-              phase={phase}
-              point={point}
-              maxOdds={maxOdds}
-              comePoints={comePoints}
-              dontComePoints={dontComePoints}
-              bankroll={bankroll}
-              setBankroll={setBankroll}
-              allSmallBet={allSmallBet}
-              setAllSmallBet={setAllSmallBet}
-              allTallBet={allTallBet}
-              setAllTallBet={setAllTallBet}
-              allNumbersBet={allNumbersBet}
-              setAllNumbersBet={setAllNumbersBet}
-              allSmallHits={allSmallHits}
-              setAllSmallHits={setAllSmallHits}
-              allTallHits={allTallHits}
-              setAllTallHits={setAllTallHits}
-              allNumbersHits={allNumbersHits}
-              setAllNumbersHits={setAllNumbersHits}
-              buyVigPolicy={buyVigPolicy}
-              fieldPayOn12={fieldPayOn12}
-            />
-            <StrategyGuide
-              pnl_={pnl_}
-              activeStrategy={activeStrategy}
-              setActiveStrategy={setActiveStrategy}
-              bets={bets}
-              phase={phase}
-              point={point}
-              betUnit={betUnit}
-              comePoints={comePoints}
-              maxOdds={maxOdds}
-              bankroll={bankroll}
-              tableMin={tableMin}
-            />
-          </>}
-          {mobileTab==="position"&&<>
-            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
-            <TableView
-              pnl_={pnl_}
-              mono={mono}
-              bets={bets}
-              point={point}
-              phase={phase}
-              comePoints={comePoints}
-              dontComePoints={dontComePoints}
-              allSmallBet={allSmallBet}
-              allTallBet={allTallBet}
-              allNumbersBet={allNumbersBet}
-              allSmallHits={allSmallHits}
-              allTallHits={allTallHits}
-              allNumbersHits={allNumbersHits}
-            />
-            <ActiveBets
-              pnl_={pnl_}
-              mono={mono}
-              bets={bets}
-              comePoints={comePoints}
-              dontComePoints={dontComePoints}
-              totalBets={totalBets}
-              comeTotal={comeTotal}
-              dcTotal={dcTotal}
-              maxOdds={maxOdds}
-              bankroll={bankroll}
-              betUnit={betUnit}
-              addComeOdds={addComeOdds}
-              removeComeOdds={removeComeOdds}
-              addDcOdds={addDcOdds}
-              removeDcOdds={removeDcOdds}
-              buyVigPolicy={buyVigPolicy}
-              fieldPayOn12={fieldPayOn12}
-            />
-            <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} buyVigPolicy={buyVigPolicy} fieldPayOn12={fieldPayOn12} />
-            <ExposureMap
-              pnl_={pnl_}
-              mono={mono}
-              maxOdds={maxOdds}
-              comeTotal={comeTotal}
-              dcTotal={dcTotal}
-              totalBets={totalBets}
-              calcOutcome={exposureCalc}
-            />
-          </>}
-          {mobileTab==="coach"&&<>
-            <CoachPanel
-              pnl_={pnl_}
-              coachAdvice={coachAdvice}
-              coachLoading={coachLoading}
-              coachEnabled={coachEnabled}
-              setCoachAdvice={setCoachAdvice}
-              setCoachEnabled={setCoachEnabled}
-              askCoach={askCoach}
-              buildSnapshot={buildSnapshot}
-            />
-          </>}
-          {mobileTab==="more"&&<>
-            <RollLog ref={logRef} log={log} mono={mono} height={200} />
-            <StrategyQuickRef pnl_={pnl_} showStrategy={showStrategy} setShowStrategy={setShowStrategy} />
-            <Footer onEndSession={() => setShowScorecard(true)} onReset={handleFooterReset} sessionWins={sessionWins} sessionLosses={sessionLosses} />
-          </>}
+        <div style={{width:"100%",maxWidth:440,margin:"0 auto"}}>
+          <ComePointPills comePoints={comePoints} dontComePoints={dontComePoints} mono={mono} />
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"4px 0"}}>
+          <Die value={die1} rolling={rolling} size={44} />
+          <Die value={die2} rolling={rolling} delay={.08} size={44} />
+          <div style={{fontSize:20,fontWeight:700,color:"#fff",fontFamily:mono,lineHeight:1,minWidth:28,textAlign:"center"}}>{die1+die2}</div>
+        </div>
+
+        {lastEntry && (
+          <div style={{fontSize:10,fontFamily:mono,textAlign:"center",lineHeight:1.3,padding:"4px 10px",borderRadius:6,background:"rgba(255,255,255,.03)",margin:"0 auto",maxWidth:440,
+            color:lastEntry.type==="win"?"#4caf50":lastEntry.type==="lose"?"#f44336":lastEntry.type==="point"?"#ff9800":"#666",
+          }}>{lastEntry.msg}</div>
+        )}
+      </div>
+
+      <div style={{flexShrink:0,padding:"8px 12px 4px",width:"100%",maxWidth:440,margin:"0 auto",boxSizing:"border-box"}}>
+        <div style={{width:"100%"}}>
+          <GameRollButton onClick={handleRollButton} disabled={rolling || totalBets === 0} isDesktop={false} isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} fullWidth />
         </div>
       </div>
+
+      <MobileBetDock
+        pnl_={pnl_}
+        tab={tab}
+        setTab={setTab}
+        bets={bets}
+        placeBet={placeBet}
+        removeBet={removeBet}
+        phase={phase}
+        point={point}
+        maxOdds={maxOdds}
+        comePoints={comePoints}
+        dontComePoints={dontComePoints}
+        bankroll={bankroll}
+        setBankroll={setBankroll}
+        allSmallBet={allSmallBet}
+        setAllSmallBet={setAllSmallBet}
+        allTallBet={allTallBet}
+        setAllTallBet={setAllTallBet}
+        allNumbersBet={allNumbersBet}
+        setAllNumbersBet={setAllNumbersBet}
+        allSmallHits={allSmallHits}
+        setAllSmallHits={setAllSmallHits}
+        allTallHits={allTallHits}
+        setAllTallHits={setAllTallHits}
+        allNumbersHits={allNumbersHits}
+        setAllNumbersHits={setAllNumbersHits}
+        buyVigPolicy={buyVigPolicy}
+        fieldPayOn12={fieldPayOn12}
+        activeSheet={mobileSheet}
+        onOpenSheet={toggleMobileSheet}
+      />
     </div>
   );
 }
