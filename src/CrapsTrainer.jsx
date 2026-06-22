@@ -34,6 +34,9 @@ import StrategyQuickRef from "./components/StrategyQuickRef.jsx";
 import GameRollButton from "./components/GameRollButton.jsx";
 import MobileBetDock from "./components/MobileBetDock.jsx";
 import MobileSheet from "./components/MobileSheet.jsx";
+import FavoriteBetGrid from "./components/FavoriteBetGrid.jsx";
+import FavoriteBetPicker from "./components/FavoriteBetPicker.jsx";
+import { loadFavorites, saveFavorites, assignFavoriteSlot } from "./lib/favoriteBets.js";
 
 export default function CrapsTrainer() {
   const winWidth = useWindowWidth();
@@ -67,6 +70,9 @@ export default function CrapsTrainer() {
   const [activeStrategy, setActiveStrategy] = useState(null);
   const [lastRollNet, setLastRollNet] = useState(null);
   const [mobileSheet, setMobileSheet] = useState(null);
+  const [favoriteSlots, setFavoriteSlots] = useState(loadFavorites);
+  const [pickerSlotIndex, setPickerSlotIndex] = useState(null);
+  const [pickerTab, setPickerTab] = useState("line");
   const [showScorecard, setShowScorecard] = useState(false);
   const [allSmallBet, setAllSmallBet] = useState(0);
   const [allTallBet, setAllTallBet] = useState(0);
@@ -92,6 +98,8 @@ export default function CrapsTrainer() {
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = 0; }, [log]);
+
+  useEffect(() => { saveFavorites(favoriteSlots); }, [favoriteSlots]);
 
   const totalBets = Object.values(bets).reduce((s, v) => s + v, 0) + allSmallBet + allTallBet + allNumbersBet;
   const lastRollRef = useRef({ d1: 3, d2: 4, total: 7 });
@@ -537,7 +545,35 @@ export default function CrapsTrainer() {
   const riskTotal = totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
 
   const toggleMobileSheet = (id) => {
-    setMobileSheet((prev) => (prev === id ? null : id));
+    setMobileSheet((prev) => {
+      const next = prev === id ? null : id;
+      if (next !== "editFavorites") setPickerSlotIndex(null);
+      return next;
+    });
+  };
+
+  const handleBonusBet = (key) => {
+    if (bankroll < 5) return;
+    if (key === "allSmall") { setAllSmallBet((p) => p + 5); setBankroll((p) => p - 5); }
+    else if (key === "allTall") { setAllTallBet((p) => p + 5); setBankroll((p) => p - 5); }
+    else if (key === "allNumbers") { setAllNumbersBet((p) => p + 5); setBankroll((p) => p - 5); }
+  };
+
+  const handleBonusRemove = (key) => {
+    if (key === "allSmall" && allSmallBet > 0) { setBankroll((p) => p + allSmallBet); setAllSmallBet(0); setAllSmallHits([]); }
+    else if (key === "allTall" && allTallBet > 0) { setBankroll((p) => p + allTallBet); setAllTallBet(0); setAllTallHits([]); }
+    else if (key === "allNumbers" && allNumbersBet > 0) { setBankroll((p) => p + allNumbersBet); setAllNumbersBet(0); setAllNumbersHits([]); }
+  };
+
+  const handleFavoriteSelect = (key) => {
+    if (pickerSlotIndex === null) return;
+    setFavoriteSlots((prev) => assignFavoriteSlot(prev, pickerSlotIndex, key));
+    setPickerSlotIndex(null);
+  };
+
+  const closeMobileSheet = () => {
+    setMobileSheet(null);
+    setPickerSlotIndex(null);
   };
 
   return (
@@ -558,7 +594,7 @@ export default function CrapsTrainer() {
         onBack={() => setShowScorecard(false)}
       />
 
-      <MobileSheet sheet={mobileSheet} onClose={() => setMobileSheet(null)}>
+      <MobileSheet sheet={mobileSheet} onClose={closeMobileSheet}>
         {mobileSheet === "position" && <>
           <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
           <ActiveBets
@@ -619,7 +655,70 @@ export default function CrapsTrainer() {
         {mobileSheet === "history" && <>
           <RollLog ref={logRef} log={log} mono={mono} height={240} />
           <StrategyQuickRef pnl_={pnl_} showStrategy={showStrategy} setShowStrategy={setShowStrategy} />
-          <Footer onEndSession={() => { setMobileSheet(null); setShowScorecard(true); }} onReset={handleFooterReset} sessionWins={sessionWins} sessionLosses={sessionLosses} />
+          <Footer onEndSession={() => { closeMobileSheet(); setShowScorecard(true); }} onReset={handleFooterReset} sessionWins={sessionWins} sessionLosses={sessionLosses} />
+        </>}
+        {mobileSheet === "allBets" && (
+          <BetPanel
+            pnl_={pnl_}
+            tab={tab}
+            setTab={setTab}
+            bets={bets}
+            placeBet={placeBet}
+            removeBet={removeBet}
+            phase={phase}
+            point={point}
+            maxOdds={maxOdds}
+            comePoints={comePoints}
+            dontComePoints={dontComePoints}
+            bankroll={bankroll}
+            setBankroll={setBankroll}
+            allSmallBet={allSmallBet}
+            setAllSmallBet={setAllSmallBet}
+            allTallBet={allTallBet}
+            setAllTallBet={setAllTallBet}
+            allNumbersBet={allNumbersBet}
+            setAllNumbersBet={setAllNumbersBet}
+            allSmallHits={allSmallHits}
+            setAllSmallHits={setAllSmallHits}
+            allTallHits={allTallHits}
+            setAllTallHits={setAllTallHits}
+            allNumbersHits={allNumbersHits}
+            setAllNumbersHits={setAllNumbersHits}
+            buyVigPolicy={buyVigPolicy}
+            fieldPayOn12={fieldPayOn12}
+            touch
+          />
+        )}
+        {mobileSheet === "editFavorites" && <>
+          <div style={{ fontSize: 12, color: "#888", textAlign: "center", marginBottom: 4 }}>
+            Tap a slot below, then pick a bet from the catalog.
+          </div>
+          <FavoriteBetGrid
+            favoriteSlots={favoriteSlots}
+            bets={bets}
+            phase={phase}
+            point={point}
+            maxOdds={maxOdds}
+            bankroll={bankroll}
+            betUnit={betUnit}
+            allSmallBet={allSmallBet}
+            allTallBet={allTallBet}
+            allNumbersBet={allNumbersBet}
+            placeBet={placeBet}
+            removeBet={removeBet}
+            onBonusBet={handleBonusBet}
+            onBonusRemove={handleBonusRemove}
+            editing
+            onSlotTap={setPickerSlotIndex}
+            mono={mono}
+          />
+          <FavoriteBetPicker
+            tab={pickerTab}
+            setTab={setPickerTab}
+            favoriteSlots={favoriteSlots}
+            pickerSlotIndex={pickerSlotIndex}
+            onSelect={handleFavoriteSelect}
+          />
         </>}
       </MobileSheet>
 
@@ -690,35 +789,29 @@ export default function CrapsTrainer() {
       </div>
 
       <MobileBetDock
-        pnl_={pnl_}
-        tab={tab}
-        setTab={setTab}
+        favoriteSlots={favoriteSlots}
         bets={bets}
         placeBet={placeBet}
         removeBet={removeBet}
+        onBonusBet={handleBonusBet}
+        onBonusRemove={handleBonusRemove}
         phase={phase}
         point={point}
         maxOdds={maxOdds}
         comePoints={comePoints}
         dontComePoints={dontComePoints}
         bankroll={bankroll}
-        setBankroll={setBankroll}
+        betUnit={betUnit}
         allSmallBet={allSmallBet}
-        setAllSmallBet={setAllSmallBet}
         allTallBet={allTallBet}
-        setAllTallBet={setAllTallBet}
         allNumbersBet={allNumbersBet}
-        setAllNumbersBet={setAllNumbersBet}
-        allSmallHits={allSmallHits}
-        setAllSmallHits={setAllSmallHits}
-        allTallHits={allTallHits}
-        setAllTallHits={setAllTallHits}
-        allNumbersHits={allNumbersHits}
-        setAllNumbersHits={setAllNumbersHits}
-        buyVigPolicy={buyVigPolicy}
-        fieldPayOn12={fieldPayOn12}
+        addComeOdds={addComeOdds}
+        removeComeOdds={removeComeOdds}
+        addDcOdds={addDcOdds}
+        removeDcOdds={removeDcOdds}
         activeSheet={mobileSheet}
         onOpenSheet={toggleMobileSheet}
+        mono={mono}
       />
     </div>
   );

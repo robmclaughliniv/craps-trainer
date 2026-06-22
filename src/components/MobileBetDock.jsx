@@ -1,41 +1,38 @@
-import BetPanel from "./BetPanel.jsx";
+import ComePointActions from "./ComePointActions.jsx";
+import FavoriteBetGrid from "./FavoriteBetGrid.jsx";
 
 const sheetButtons = [
   { id: "position", label: "Position", icon: "📊" },
   { id: "coach", label: "Coach", icon: "🎯" },
   { id: "history", label: "History", icon: "📜" },
+  { id: "allBets", label: "All Bets", icon: "🎰" },
+  { id: "editFavorites", label: "Edit", icon: "⭐" },
 ];
 
 export default function MobileBetDock({
-  pnl_,
-  tab,
-  setTab,
+  favoriteSlots,
   bets,
   placeBet,
   removeBet,
+  onBonusBet,
+  onBonusRemove,
   phase,
   point,
   maxOdds,
   comePoints,
   dontComePoints,
   bankroll,
-  setBankroll,
+  betUnit,
   allSmallBet,
-  setAllSmallBet,
   allTallBet,
-  setAllTallBet,
   allNumbersBet,
-  setAllNumbersBet,
-  allSmallHits,
-  setAllSmallHits,
-  allTallHits,
-  setAllTallHits,
-  allNumbersHits,
-  setAllNumbersHits,
-  buyVigPolicy,
-  fieldPayOn12,
+  addComeOdds,
+  removeComeOdds,
+  addDcOdds,
+  removeDcOdds,
   activeSheet,
   onOpenSheet,
+  mono,
 }) {
   return (
     <div style={{
@@ -45,17 +42,17 @@ export default function MobileBetDock({
       paddingBottom: "max(8px, env(safe-area-inset-bottom))",
       boxShadow: "0 -4px 24px rgba(0,0,0,.4)",
     }}>
-      <div style={{ display: "flex", gap: 6, padding: "8px 12px 0" }}>
+      <div style={{ display: "flex", gap: 4, padding: "8px 8px 0", overflowX: "auto" }}>
         {sheetButtons.map((btn) => (
           <button
             key={btn.id}
             onClick={() => onOpenSheet(btn.id)}
             style={{
-              flex: 1,
+              flex: "1 0 56px",
               minHeight: 40,
               padding: "6px 4px",
               borderRadius: 8,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 600,
               background: activeSheet === btn.id ? "rgba(76,175,80,.12)" : "rgba(255,255,255,.04)",
               color: activeSheet === btn.id ? "#4caf50" : "#888",
@@ -74,36 +71,36 @@ export default function MobileBetDock({
         ))}
       </div>
 
-      <BetPanel
-        pnl_={pnl_}
-        tab={tab}
-        setTab={setTab}
+      <ComePointActions
+        comePoints={comePoints}
+        dontComePoints={dontComePoints}
+        maxOdds={maxOdds}
+        bankroll={bankroll}
+        betUnit={betUnit}
+        addComeOdds={addComeOdds}
+        removeComeOdds={removeComeOdds}
+        addDcOdds={addDcOdds}
+        removeDcOdds={removeDcOdds}
+        mono={mono}
+      />
+
+      <FavoriteBetGrid
+        favoriteSlots={favoriteSlots}
         bets={bets}
-        placeBet={placeBet}
-        removeBet={removeBet}
         phase={phase}
         point={point}
         maxOdds={maxOdds}
-        comePoints={comePoints}
-        dontComePoints={dontComePoints}
         bankroll={bankroll}
-        setBankroll={setBankroll}
+        betUnit={betUnit}
         allSmallBet={allSmallBet}
-        setAllSmallBet={setAllSmallBet}
         allTallBet={allTallBet}
-        setAllTallBet={setAllTallBet}
         allNumbersBet={allNumbersBet}
-        setAllNumbersBet={setAllNumbersBet}
-        allSmallHits={allSmallHits}
-        setAllSmallHits={setAllSmallHits}
-        allTallHits={allTallHits}
-        setAllTallHits={setAllTallHits}
-        allNumbersHits={allNumbersHits}
-        setAllNumbersHits={setAllNumbersHits}
-        buyVigPolicy={buyVigPolicy}
-        fieldPayOn12={fieldPayOn12}
-        touch
-        embeddedInDock
+        placeBet={placeBet}
+        removeBet={removeBet}
+        onBonusBet={onBonusBet}
+        onBonusRemove={onBonusRemove}
+        editing={false}
+        mono={mono}
       />
     </div>
   );

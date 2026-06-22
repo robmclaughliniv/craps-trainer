@@ -58,7 +58,6 @@ export default function BetPanel({
           <div style={{ height: 8 }} />
           <BetButton touch={touch} label="Come" he={HOUSE_EDGES.come} perRollHe={HOUSE_EDGES_PER_ROLL.come} amount={bets.come} onBet={() => placeBet("come")} onRemove={() => removeBet("come")} disabled={phase === "comeout"} />
           <BetButton touch={touch} label="Don't Come" he={HOUSE_EDGES.dontCome} perRollHe={HOUSE_EDGES_PER_ROLL.dontCome} amount={bets.dontCome} onBet={() => placeBet("dontCome")} onRemove={() => removeBet("dontCome")} disabled={phase === "comeout"} />
-          {(comePoints.length > 0 || dontComePoints.length > 0) && <div style={{ fontSize: 10, color: "#555", marginTop: 4, fontStyle: "italic" }}>Manage come/DC odds in Position panel ↓</div>}
         </>}
         {tab === "place" && <>
           <BetButton touch={touch} label="Place 6" he={HOUSE_EDGES.place6} perRollHe={HOUSE_EDGES_PER_ROLL.place6} amount={bets.place6} onBet={() => placeBet("place6")} onRemove={() => removeBet("place6")} disabled={phase === "comeout"} />

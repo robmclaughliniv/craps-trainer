@@ -2,6 +2,8 @@ const titles = {
   position: "Position",
   coach: "Coach",
   history: "History",
+  allBets: "All Bets",
+  editFavorites: "Edit Favorites",
 };
 
 export default function MobileSheet({ sheet, onClose, children }) {
