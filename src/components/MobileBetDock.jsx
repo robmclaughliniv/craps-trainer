@@ -22,7 +22,7 @@ export default function MobileBetDock({
   comePoints,
   dontComePoints,
   bankroll,
-  betUnit,
+  tableMin,
   allSmallBet,
   allTallBet,
   allNumbersBet,
@@ -76,7 +76,7 @@ export default function MobileBetDock({
         dontComePoints={dontComePoints}
         maxOdds={maxOdds}
         bankroll={bankroll}
-        betUnit={betUnit}
+        tableMin={tableMin}
         addComeOdds={addComeOdds}
         removeComeOdds={removeComeOdds}
         addDcOdds={addDcOdds}
@@ -91,7 +91,7 @@ export default function MobileBetDock({
         point={point}
         maxOdds={maxOdds}
         bankroll={bankroll}
-        betUnit={betUnit}
+        tableMin={tableMin}
         allSmallBet={allSmallBet}
         allTallBet={allTallBet}
         allNumbersBet={allNumbersBet}

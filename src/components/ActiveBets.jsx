@@ -1,4 +1,4 @@
-import { HOUSE_EDGES, ratingColor, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
+import { HOUSE_EDGES, ratingColor, getMaxOddsAmt, getBuyHE, getFieldHE, getBetAddAmount } from "../lib/betLogic.js";
 import Badge from "./Badge.jsx";
 
 const BET_LABELS = { pass: "Pass Line", dontPass: "Don't Pass", passOdds: "Pass Odds", dontPassOdds: "DP Odds", come: "Come (pending)", dontCome: "DC (pending)", comeOdds: "Come Odds (pre)", dontComeOdds: "DC Odds (pre)", place4: "Place 4", place5: "Place 5", place6: "Place 6", place8: "Place 8", place9: "Place 9", place10: "Place 10", field: "Field", hardway4: "Hard 4", hardway6: "Hard 6", hardway8: "Hard 8", hardway10: "Hard 10", any7: "Any 7", anyCraps: "Any Craps", yo: "Yo", boxcars: "Boxcars", aces: "Aces", buy4: "Buy 4", buy10: "Buy 10", horn: "Horn", ce: "C&E" };
@@ -24,7 +24,7 @@ export default function ActiveBets({
   dcTotal,
   maxOdds,
   bankroll,
-  betUnit,
+  tableMin,
   addComeOdds,
   removeComeOdds,
   addDcOdds,
@@ -75,6 +75,8 @@ export default function ActiveBets({
     const rmFn = isCome ? removeComeOdds : removeDcOdds;
     const maxOddsAmt = getMaxOddsAmt(maxOdds, cp.amount, cp.number);
     const atMax = cp.odds >= maxOddsAmt;
+    const oddsKey = isCome ? "comeOdds" : "dontComeOdds";
+    const addAmt = getBetAddAmount(oddsKey, tableMin, cp.odds);
     return (
       <div style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
@@ -92,7 +94,7 @@ export default function ActiveBets({
             <Badge he={0} />
           </div>
           <div style={{ display: "flex", gap: 3 }}>
-            <SmallBtn onClick={() => addFn(idx)} disabled={bankroll < betUnit || atMax} color="#4caf50">+</SmallBtn>
+            <SmallBtn onClick={() => addFn(idx)} disabled={bankroll < addAmt || atMax} color="#4caf50">+</SmallBtn>
             <SmallBtn onClick={() => rmFn(idx)} disabled={cp.odds <= 0} color="#f44336">−</SmallBtn>
           </div>
         </div>

@@ -21,13 +21,12 @@ export default function StrategyGuide({
   bets,
   phase,
   point,
-  betUnit,
   comePoints,
   maxOdds,
   bankroll,
   tableMin,
 }) {
-  const steps = getStrategySteps(activeStrategy, { bets, phase, point, betUnit, comePoints, maxOdds });
+  const steps = getStrategySteps(activeStrategy, { bets, phase, point, tableMin, comePoints, maxOdds });
   const selectedStrat = activeStrategy && STRATS.find((s) => s.id === activeStrategy);
   const units = tableMin > 0 ? Math.floor(bankroll / tableMin) : 0;
 

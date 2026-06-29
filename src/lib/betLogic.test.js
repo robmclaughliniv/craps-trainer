@@ -4,6 +4,9 @@ import {
   classifyBet,
   getMaxOddsAmt,
   getBetIncrement,
+  getBetMinimum,
+  getBetAddAmount,
+  getBetRemoveAmount,
   getBuyHE,
   getFieldHE,
   initialBets,
@@ -212,8 +215,50 @@ describe("getBetIncrement", () => {
     expect(getBetIncrement("horn", 5)).toBe(4);
   });
 
-  it("falls back to bet unit otherwise", () => {
+  it("uses table min otherwise", () => {
     expect(getBetIncrement("pass", 25)).toBe(25);
+    expect(getBetIncrement("pass", 10)).toBe(10);
+  });
+});
+
+describe("getBetMinimum / getBetAddAmount / getBetRemoveAmount", () => {
+  it("computes place 6/8 minimum from table min", () => {
+    expect(getBetMinimum("place6", 5)).toBe(6);
+    expect(getBetMinimum("place8", 10)).toBe(12);
+    expect(getBetMinimum("place6", 15)).toBe(18);
+    expect(getBetMinimum("place8", 25)).toBe(30);
+  });
+
+  it("first place 6 add uses minimum, then increment", () => {
+    expect(getBetAddAmount("place6", 10, 0)).toBe(12);
+    expect(getBetAddAmount("place6", 10, 12)).toBe(6);
+    expect(getBetAddAmount("place8", 10, 18)).toBe(6);
+  });
+
+  it("remove from place 6/8 respects minimum floor", () => {
+    expect(getBetRemoveAmount("place6", 10, 18)).toBe(6);
+    expect(getBetRemoveAmount("place6", 10, 12)).toBe(12);
+    expect(getBetRemoveAmount("place8", 10, 12)).toBe(12);
+  });
+
+  it("line bets use table min for first add and increment", () => {
+    expect(getBetMinimum("pass", 10)).toBe(10);
+    expect(getBetAddAmount("pass", 10, 0)).toBe(10);
+    expect(getBetAddAmount("pass", 10, 10)).toBe(10);
+    expect(getBetRemoveAmount("pass", 10, 25)).toBe(10);
+  });
+
+  it("line bets at higher table mins", () => {
+    expect(getBetAddAmount("pass", 25, 0)).toBe(25);
+    expect(getBetAddAmount("pass", 25, 25)).toBe(25);
+    expect(getBetRemoveAmount("pass", 25, 50)).toBe(25);
+  });
+
+  it("come and dc odds follow table min", () => {
+    expect(getBetAddAmount("comeOdds", 25, 0)).toBe(25);
+    expect(getBetAddAmount("comeOdds", 25, 25)).toBe(25);
+    expect(getBetRemoveAmount("comeOdds", 25, 50)).toBe(25);
+    expect(getBetAddAmount("dontComeOdds", 25, 0)).toBe(25);
   });
 });
 

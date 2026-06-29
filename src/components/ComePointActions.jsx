@@ -1,4 +1,4 @@
-import { getMaxOddsAmt } from "../lib/betLogic.js";
+import { getMaxOddsAmt, getBetAddAmount } from "../lib/betLogic.js";
 
 function OddsBtn({ onClick, disabled, color, children }) {
   return (
@@ -23,11 +23,13 @@ function OddsBtn({ onClick, disabled, color, children }) {
   );
 }
 
-function PointRow({ type, cp, idx, maxOdds, bankroll, betUnit, addFn, removeFn, mono }) {
+function PointRow({ type, cp, idx, maxOdds, bankroll, tableMin, addFn, removeFn, mono }) {
   const isCome = type === "come";
   const color = isCome ? "#4caf50" : "#f44336";
+  const oddsKey = isCome ? "comeOdds" : "dontComeOdds";
   const maxOddsAmt = getMaxOddsAmt(maxOdds, cp.amount, cp.number);
   const atMax = cp.odds >= maxOddsAmt;
+  const addAmt = getBetAddAmount(oddsKey, tableMin, cp.odds);
 
   return (
     <div style={{
@@ -49,7 +51,7 @@ function PointRow({ type, cp, idx, maxOdds, bankroll, betUnit, addFn, removeFn, 
           ${cp.amount} · Odds ${cp.odds}/${maxOddsAmt}
         </div>
       </div>
-      <OddsBtn onClick={() => addFn(idx)} disabled={bankroll < betUnit || atMax} color="#4caf50">+</OddsBtn>
+      <OddsBtn onClick={() => addFn(idx)} disabled={bankroll < addAmt || atMax} color="#4caf50">+</OddsBtn>
       <OddsBtn onClick={() => removeFn(idx)} disabled={cp.odds <= 0} color="#f44336">−</OddsBtn>
     </div>
   );
@@ -60,7 +62,7 @@ export default function ComePointActions({
   dontComePoints,
   maxOdds,
   bankroll,
-  betUnit,
+  tableMin,
   addComeOdds,
   removeComeOdds,
   addDcOdds,
@@ -89,7 +91,7 @@ export default function ComePointActions({
             idx={i}
             maxOdds={maxOdds}
             bankroll={bankroll}
-            betUnit={betUnit}
+            tableMin={tableMin}
             addFn={addComeOdds}
             removeFn={removeComeOdds}
             mono={mono}
@@ -103,7 +105,7 @@ export default function ComePointActions({
             idx={i}
             maxOdds={maxOdds}
             bankroll={bankroll}
-            betUnit={betUnit}
+            tableMin={tableMin}
             addFn={addDcOdds}
             removeFn={removeDcOdds}
             mono={mono}

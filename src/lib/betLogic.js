@@ -27,10 +27,29 @@ export function getMaxOddsAmt(maxOdds, flatBet, ptNum) {
   return flatBet * 5;
 }
 
-export function getBetIncrement(key, betUnit) {
+export function getBetIncrement(key, tableMin) {
   if (key === "place6" || key === "place8") return 6;
   if (key === "horn") return 4;
-  return betUnit;
+  return tableMin;
+}
+
+export function getBetMinimum(key, tableMin) {
+  if (key === "place6" || key === "place8") return Math.ceil(tableMin / 6) * 6;
+  return tableMin;
+}
+
+export function getBetAddAmount(key, tableMin, currentAmount) {
+  if (currentAmount === 0) return getBetMinimum(key, tableMin);
+  return getBetIncrement(key, tableMin);
+}
+
+export function getBetRemoveAmount(key, tableMin, currentAmount) {
+  if (key === "place6" || key === "place8") {
+    const min = getBetMinimum(key, tableMin);
+    if (currentAmount <= min) return currentAmount;
+    return getBetIncrement(key, tableMin);
+  }
+  return Math.min(currentAmount, getBetIncrement(key, tableMin));
 }
 
 export function getBuyHE(num, vigPolicy) {

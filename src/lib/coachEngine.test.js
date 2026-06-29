@@ -13,7 +13,7 @@ const snap = (overrides = {}) => ({
   totalAtRisk: 0,
   consecutivePSOs: 0,
   activeStrategy: null,
-  betUnit: 10,
+  tableMin: 10,
   lastRoll: null,
   lastResult: null,
   ...overrides,

@@ -70,13 +70,13 @@ export function getLocalInstinct(snap) {
     if (wasPointHit)
       return { instinct: "When you hit the point, collect and reload the exact same way. Don't let a win change your sizing.", why: "Hitting the point is one resolved bet. Next come-out is independent.", action: "Same Pass bet. Rebuild your position the same way.", risk: "low", risk_note: "Fresh come-out.", warnings: null };
     if (!hasPass)
-      return { instinct: "When it's come-out and you have no Pass bet, that's your first and only move.", why: "Pass line at 1.41% edge is your foundation. Build from here.", action: "Place a $" + snap.betUnit + " Pass Line bet.", risk: "low", risk_note: "No bets on the table.", warnings: null };
+      return { instinct: "When it's come-out and you have no Pass bet, that's your first and only move.", why: "Pass line at 1.41% edge is your foundation. Build from here.", action: "Place a $" + snap.tableMin + " Pass Line bet.", risk: "low", risk_note: "No bets on the table.", warnings: null };
     return { instinct: "When your Pass bet is down on come-out, keep your hands off. Let the dice set the point.", why: "Come-out resolves on 7/11 (win) or 2/3/12 (lose). No other bets matter yet.", action: "Wait for the point.", risk: "low", risk_note: "Pass bet working.", warnings: null };
   }
 
   if (hasPass && !hasOdds)
     return { instinct: "When the point is set and your Pass has no odds behind it, that's ALWAYS your first move.", why: "Odds pay true — 0% house edge. The only free bet in the casino.", action: "Max your odds on the Pass Line now.", risk: "low", risk_note: "Missing free money on odds.", warnings: null };
-  if (hasPass && hasOdds && b.passOdds < snap.betUnit * 3 && pt)
+  if (hasPass && hasOdds && b.passOdds < snap.tableMin * 3 && pt)
     return { instinct: "When your odds aren't maxed, every dollar moved to odds improves your position.", why: "Odds at 0% vs anything else at 1.4%+. Always max odds first.", action: "Add more odds before making any other bet.", risk: "low", risk_note: "Odds can go higher.", warnings: null };
 
   if (pt === 6 || pt === 8) {

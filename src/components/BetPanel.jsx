@@ -1,4 +1,4 @@
-import { HOUSE_EDGES, HOUSE_EDGES_PER_ROLL, getMaxOddsAmt, getBuyHE, getFieldHE } from "../lib/betLogic.js";
+import { HOUSE_EDGES, HOUSE_EDGES_PER_ROLL, getMaxOddsAmt, getBuyHE, getFieldHE, getBetMinimum } from "../lib/betLogic.js";
 import BetButton from "./BetButton.jsx";
 import Badge from "./Badge.jsx";
 
@@ -32,9 +32,11 @@ export default function BetPanel({
   setAllNumbersHits,
   buyVigPolicy,
   fieldPayOn12,
+  tableMin,
   touch = false,
   embeddedInDock = false,
 }) {
+  const place68Min = getBetMinimum("place6", tableMin);
   const tabPad = touch ? "12px 0" : "10px 0";
   const tabFont = touch ? 12 : 11;
   const contentPad = touch ? "10px 12px" : "8px 12px";
@@ -60,8 +62,8 @@ export default function BetPanel({
           <BetButton touch={touch} label="Don't Come" he={HOUSE_EDGES.dontCome} perRollHe={HOUSE_EDGES_PER_ROLL.dontCome} amount={bets.dontCome} onBet={() => placeBet("dontCome")} onRemove={() => removeBet("dontCome")} disabled={phase === "comeout"} />
         </>}
         {tab === "place" && <>
-          <BetButton touch={touch} label="Place 6" he={HOUSE_EDGES.place6} perRollHe={HOUSE_EDGES_PER_ROLL.place6} amount={bets.place6} onBet={() => placeBet("place6")} onRemove={() => removeBet("place6")} disabled={phase === "comeout"} />
-          <BetButton touch={touch} label="Place 8" he={HOUSE_EDGES.place8} perRollHe={HOUSE_EDGES_PER_ROLL.place8} amount={bets.place8} onBet={() => placeBet("place8")} onRemove={() => removeBet("place8")} disabled={phase === "comeout"} />
+          <BetButton touch={touch} label="Place 6" subLabel={`Min $${place68Min}`} he={HOUSE_EDGES.place6} perRollHe={HOUSE_EDGES_PER_ROLL.place6} amount={bets.place6} onBet={() => placeBet("place6")} onRemove={() => removeBet("place6")} disabled={phase === "comeout"} />
+          <BetButton touch={touch} label="Place 8" subLabel={`Min $${place68Min}`} he={HOUSE_EDGES.place8} perRollHe={HOUSE_EDGES_PER_ROLL.place8} amount={bets.place8} onBet={() => placeBet("place8")} onRemove={() => removeBet("place8")} disabled={phase === "comeout"} />
           <BetButton touch={touch} label="Place 5" he={HOUSE_EDGES.place5} perRollHe={HOUSE_EDGES_PER_ROLL.place5} amount={bets.place5} onBet={() => placeBet("place5")} onRemove={() => removeBet("place5")} disabled={phase === "comeout"} />
           <BetButton touch={touch} label="Place 9" he={HOUSE_EDGES.place9} perRollHe={HOUSE_EDGES_PER_ROLL.place9} amount={bets.place9} onBet={() => placeBet("place9")} onRemove={() => removeBet("place9")} disabled={phase === "comeout"} />
           <BetButton touch={touch} label="Place 4" he={HOUSE_EDGES.place4} perRollHe={HOUSE_EDGES_PER_ROLL.place4} amount={bets.place4} onBet={() => placeBet("place4")} onRemove={() => removeBet("place4")} disabled={phase === "comeout"} />
@@ -70,7 +72,7 @@ export default function BetPanel({
           <div style={{ fontSize: 10, color: "#555", letterSpacing: ".1em", fontWeight: 600, marginBottom: 4 }}>BUY BETS (true odds - 5% vig)</div>
           <BetButton touch={touch} label="Buy 4" he={getBuyHE(4, buyVigPolicy)} perRollHe={HOUSE_EDGES_PER_ROLL.buy4} amount={bets.buy4} onBet={() => placeBet("buy4")} onRemove={() => removeBet("buy4")} disabled={phase === "comeout"} />
           <BetButton touch={touch} label="Buy 10" he={getBuyHE(10, buyVigPolicy)} perRollHe={HOUSE_EDGES_PER_ROLL.buy10} amount={bets.buy10} onBet={() => placeBet("buy10")} onRemove={() => removeBet("buy10")} disabled={phase === "comeout"} />
-          {!touch && <div style={{ fontSize: 11, color: "#555", marginTop: 8, fontStyle: "italic" }}>Place 6/8 use $6 increments. Buy 4/10 beats Place 4/10 (4.76% vs 6.67%).</div>}
+          {!touch && <div style={{ fontSize: 11, color: "#555", marginTop: 8, fontStyle: "italic" }}>Place 6/8: $6 increments, min ${place68Min}. Buy 4/10 beats Place 4/10 (4.76% vs 6.67%).</div>}
         </>}
         {tab === "props" && <>
           <BetButton touch={touch} label="Field" he={getFieldHE(fieldPayOn12)} perRollHe={HOUSE_EDGES_PER_ROLL.field} amount={bets.field} onBet={() => placeBet("field")} onRemove={() => removeBet("field")} />

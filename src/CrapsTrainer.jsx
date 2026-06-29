@@ -2,7 +2,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import {
   calcOutcome,
   classifyBet,
-  getBetIncrement,
+  getBetAddAmount,
+  getBetRemoveAmount,
   getMaxOddsAmt,
   initialBets,
 } from "./lib/betLogic.js";
@@ -26,6 +27,10 @@ import Footer from "./components/Footer.jsx";
 import DiceArea from "./components/DiceArea.jsx";
 import Die from "./components/Die.jsx";
 import useWindowWidth from "./hooks/useWindowWidth.js";
+import useColumnWidths from "./hooks/useColumnWidths.js";
+import useIntelligencePanelCollapsed from "./hooks/useIntelligencePanelCollapsed.js";
+import useAllBetsCollapsed from "./hooks/useAllBetsCollapsed.js";
+import useAutoPassLine from "./hooks/useAutoPassLine.js";
 import PhaseTag from "./components/PhaseTag.jsx";
 import ShooterTag from "./components/ShooterTag.jsx";
 import TrainerStat from "./components/TrainerStat.jsx";
@@ -34,8 +39,12 @@ import StrategyQuickRef from "./components/StrategyQuickRef.jsx";
 import GameRollButton from "./components/GameRollButton.jsx";
 import MobileBetDock from "./components/MobileBetDock.jsx";
 import MobileSheet from "./components/MobileSheet.jsx";
+import ResizeHandle from "./components/ResizeHandle.jsx";
+import IntelligencePanelToggle from "./components/IntelligencePanelToggle.jsx";
 import FavoriteBetGrid from "./components/FavoriteBetGrid.jsx";
 import FavoriteBetPicker from "./components/FavoriteBetPicker.jsx";
+import FavoriteBetsSection from "./components/FavoriteBetsSection.jsx";
+import CollapsibleAllBets from "./components/CollapsibleAllBets.jsx";
 import { loadFavorites, saveFavorites, assignFavoriteSlot } from "./lib/favoriteBets.js";
 
 export default function CrapsTrainer() {
@@ -44,7 +53,6 @@ export default function CrapsTrainer() {
 
   const [bankroll, setBankroll] = useState(500);
   const [startingBankroll, setStartingBankroll] = useState(500);
-  const [betUnit, setBetUnit] = useState(10);
   const [tableMin, setTableMin] = useState(10);
   const [buyVigPolicy, setBuyVigPolicy] = useState("always");
   const [fieldPayOn12, setFieldPayOn12] = useState(3);
@@ -73,6 +81,7 @@ export default function CrapsTrainer() {
   const [favoriteSlots, setFavoriteSlots] = useState(loadFavorites);
   const [pickerSlotIndex, setPickerSlotIndex] = useState(null);
   const [pickerTab, setPickerTab] = useState("line");
+  const [editingFavorites, setEditingFavorites] = useState(false);
   const [showScorecard, setShowScorecard] = useState(false);
   const [allSmallBet, setAllSmallBet] = useState(0);
   const [allTallBet, setAllTallBet] = useState(0);
@@ -96,12 +105,20 @@ export default function CrapsTrainer() {
   const sessionStartRef = useRef(Date.now());
   const betTracker = useRef({ smart:0, ok:0, trash:0, smartAmt:0, okAmt:0, trashAmt:0, total:0, onStrat:0, offStrat:0, peak:500, trough:500 });
   const logRef = useRef(null);
+  const layoutRef = useRef(null);
+  const { leftWidth, rightWidth, startLeftResize, startRightResize, resetLeft, resetRight } = useColumnWidths(layoutRef);
+  const { collapsed: intelligenceCollapsed, collapse: collapseIntelligence, expand: expandIntelligence } = useIntelligencePanelCollapsed();
+  const { collapsed: allBetsCollapsed, toggle: toggleAllBets } = useAllBetsCollapsed();
+  const { enabled: autoPassLine, setEnabled: setAutoPassLine } = useAutoPassLine();
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = 0; }, [log]);
 
   useEffect(() => { saveFavorites(favoriteSlots); }, [favoriteSlots]);
 
   const totalBets = Object.values(bets).reduce((s, v) => s + v, 0) + allSmallBet + allTallBet + allNumbersBet;
+  const comeTotal = comePoints.reduce((s, c) => s + c.amount + c.odds, 0);
+  const dcTotal = dontComePoints.reduce((s, d) => s + d.amount + d.odds, 0);
+  const totalAtRisk = totalBets + comeTotal + dcTotal;
   const lastRollRef = useRef({ d1: 3, d2: 4, total: 7 });
 
   const addLog = useCallback((msg, type = "info") => {
@@ -125,8 +142,8 @@ export default function CrapsTrainer() {
     if (rollCount > 0 && rollCount !== coachRollCount.current) {
       coachRollCount.current = rollCount;
       askCoach({
-        phase, point, bets, bankroll, startingBankroll, betUnit, maxOdds, activeStrategy,
-        totalAtRisk: Object.values(bets).reduce((s, v) => s + v, 0) + comePoints.reduce((s, c) => s + c.amount + c.odds, 0) + dontComePoints.reduce((s, d) => s + d.amount + d.odds, 0),
+        phase, point, bets, bankroll, startingBankroll, tableMin, maxOdds, activeStrategy,
+        totalAtRisk,
         comePoints, dontComePoints, rollCount, sessionWins, sessionLosses,
         lastRoll: lastRollRef.current, lastResult: log.length > 0 ? log[log.length - 1].msg : "",
         consecutivePSOs,
@@ -152,7 +169,6 @@ export default function CrapsTrainer() {
   }, [bankroll]);
 
   const placeBet = (key) => {
-    if (bankroll < betUnit) return;
     if (key === "passOdds" && bets.pass === 0) return;
     if (key === "dontPassOdds" && bets.dontPass === 0) return;
     if (key === "comeOdds" && comePoints.length === 0) return;
@@ -160,65 +176,69 @@ export default function CrapsTrainer() {
     if ((key === "pass" || key === "dontPass") && phase !== "comeout" && bets[key] === 0) return;
     if (key === "passOdds") { const max = getMaxOddsAmt(maxOdds, bets.pass, point); if (bets.passOdds >= max) return; }
     if (key === "dontPassOdds") { const max = getMaxOddsAmt(maxOdds, bets.dontPass, point); if (bets.dontPassOdds >= max) return; }
-    var inc = getBetIncrement(key, betUnit);
-    if (bankroll < inc) return;
-    trackBet(key, inc);
-    setBets((p) => ({ ...p, [key]: p[key] + inc }));
-    setBankroll((p) => p - inc);
+    const addAmt = getBetAddAmount(key, tableMin, bets[key]);
+    if (bankroll < addAmt) return;
+    trackBet(key, addAmt);
+    setBets((p) => ({ ...p, [key]: p[key] + addAmt }));
+    setBankroll((p) => p - addAmt);
   };
+
+  useEffect(() => {
+    if (showSetup || !autoPassLine || phase !== "comeout" || bets.pass > 0 || bankroll < getBetAddAmount("pass", tableMin, 0)) return;
+    placeBet("pass");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSetup, autoPassLine, phase, bets.pass, bankroll, tableMin]);
+
   const removeBet = (key) => {
     if (bets[key] <= 0) return;
     if ((key === "pass" || key === "dontPass") && phase === "point") return;
-    const inc = getBetIncrement(key, betUnit);
-    const amt = Math.min(bets[key], inc);
+    const amt = getBetRemoveAmount(key, tableMin, bets[key]);
     setBets((p) => ({ ...p, [key]: p[key] - amt }));
     setBankroll((p) => p + amt);
   };
 
   const addComeOdds = (idx) => {
-    if (bankroll < betUnit) return;
-    trackBet("comeOdds_post", betUnit);
-    setComePoints((p) => p.map((cp, i) => {
-      if (i !== idx) return cp;
-      const max = getMaxOddsAmt(maxOdds, cp.amount, cp.number);
-      if (cp.odds >= max) return cp;
-      setBankroll((prev) => prev - betUnit);
-      return { ...cp, odds: cp.odds + betUnit };
-    }));
+    const cp = comePoints[idx];
+    if (!cp) return;
+    const max = getMaxOddsAmt(maxOdds, cp.amount, cp.number);
+    if (cp.odds >= max) return;
+    const addAmt = getBetAddAmount("comeOdds", tableMin, cp.odds);
+    if (bankroll < addAmt) return;
+    trackBet("comeOdds_post", addAmt);
+    setBankroll((prev) => prev - addAmt);
+    setComePoints((p) => p.map((c, i) => (i === idx ? { ...c, odds: c.odds + addAmt } : c)));
   };
   const removeComeOdds = (idx) => {
-    setComePoints((p) => p.map((cp, i) => {
-      if (i !== idx || cp.odds <= 0) return cp;
-      const amt = Math.min(cp.odds, betUnit);
-      setBankroll((prev) => prev + amt);
-      return { ...cp, odds: cp.odds - amt };
-    }));
+    const cp = comePoints[idx];
+    if (!cp || cp.odds <= 0) return;
+    const amt = getBetRemoveAmount("comeOdds", tableMin, cp.odds);
+    setBankroll((prev) => prev + amt);
+    setComePoints((p) => p.map((c, i) => (i === idx ? { ...c, odds: c.odds - amt } : c)));
   };
   const addDcOdds = (idx) => {
-    if (bankroll < betUnit) return;
-    trackBet("dcOdds_post", betUnit);
-    setDontComePoints((p) => p.map((dp, i) => {
-      if (i !== idx) return dp;
-      const max = getMaxOddsAmt(maxOdds, dp.amount, dp.number);
-      if (dp.odds >= max) return dp;
-      setBankroll((prev) => prev - betUnit);
-      return { ...dp, odds: dp.odds + betUnit };
-    }));
+    const dp = dontComePoints[idx];
+    if (!dp) return;
+    const max = getMaxOddsAmt(maxOdds, dp.amount, dp.number);
+    if (dp.odds >= max) return;
+    const addAmt = getBetAddAmount("dontComeOdds", tableMin, dp.odds);
+    if (bankroll < addAmt) return;
+    trackBet("dcOdds_post", addAmt);
+    setBankroll((prev) => prev - addAmt);
+    setDontComePoints((p) => p.map((d, i) => (i === idx ? { ...d, odds: d.odds + addAmt } : d)));
   };
   const removeDcOdds = (idx) => {
-    setDontComePoints((p) => p.map((dp, i) => {
-      if (i !== idx || dp.odds <= 0) return dp;
-      const amt = Math.min(dp.odds, betUnit);
-      setBankroll((prev) => prev + amt);
-      return { ...dp, odds: dp.odds - amt };
-    }));
+    const dp = dontComePoints[idx];
+    if (!dp || dp.odds <= 0) return;
+    const amt = getBetRemoveAmount("dontComeOdds", tableMin, dp.odds);
+    setBankroll((prev) => prev + amt);
+    setDontComePoints((p) => p.map((d, i) => (i === idx ? { ...d, odds: d.odds - amt } : d)));
   };
   const win = (key, payout) => { const amt = bets[key]; if (amt <= 0) return 0; setBankroll((p) => p + amt + payout); setBets((p) => ({ ...p, [key]: 0 })); setSessionWins((p) => p + payout); return payout; };
   const lose = (key) => { const amt = bets[key]; if (amt <= 0) return 0; setBets((p) => ({ ...p, [key]: 0 })); setSessionLosses((p) => p + amt); return amt; };
   const push = (key) => { const amt = bets[key]; if (amt <= 0) return; setBankroll((p) => p + amt); setBets((p) => ({ ...p, [key]: 0 })); };
 
   const rollDice = () => {
-    if (rolling || totalBets === 0) return;
+    if (rolling || totalAtRisk === 0) return;
     setRolling(true);
     if (soundEnabled) playDiceRoll();
     const d1 = Math.floor(Math.random() * 6) + 1;
@@ -247,22 +267,22 @@ export default function CrapsTrainer() {
 
   // ── AUTO-ROLL FOR BOT SHOOTERS ──
   useEffect(() => {
-    if (autoRolling && !shooterPaused && isBotShooter && !rolling && totalBets > 0 && !showSetup) {
+    if (autoRolling && !shooterPaused && isBotShooter && !rolling && totalAtRisk > 0 && !showSetup) {
       autoRollTimerRef.current = setTimeout(() => rollDice(), 1500);
     }
     return () => { if (autoRollTimerRef.current) clearTimeout(autoRollTimerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRolling, shooterPaused, isBotShooter, rolling, rollCount, totalBets, showSetup]);
+  }, [autoRolling, shooterPaused, isBotShooter, rolling, rollCount, totalAtRisk, showSetup]);
 
   // ── ROLL BUTTON HANDLER ──
   const handleRollButton = () => {
     if (rolling) return;
     if (!isBotShooter) {
-      if (totalBets === 0) return;
+      if (totalAtRisk === 0) return;
       rollDice();
       return;
     }
-    if (totalBets === 0) return;
+    if (totalAtRisk === 0) return;
     if (shooterPaused) {
       setAutoRolling(true);
       setShooterPaused(false);
@@ -275,8 +295,8 @@ export default function CrapsTrainer() {
 
   const rollBtnLabel = () => {
     if (rolling) return "Rolling...";
-    if (totalBets === 0) return "Place bets first";
-    if (!isBotShooter) return `ROLL 🎲  ($${totalBets} at risk)`;
+    if (totalAtRisk === 0) return "Place bets first";
+    if (!isBotShooter) return `ROLL 🎲  ($${totalAtRisk} at risk)`;
     if (shooterPaused) return `▶ Start ${currentShooter.name}'s Hand`;
     return `⏸ Pause ${currentShooter.name}`;
   };
@@ -293,14 +313,14 @@ export default function CrapsTrainer() {
 
   const pnl = bankroll - startingBankroll + totalBets;
   const buildSnapshot = () => ({
-    phase, point, bets, bankroll, startingBankroll, betUnit, maxOdds, activeStrategy,
-    totalAtRisk: totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0),
+    phase, point, bets, bankroll, startingBankroll, tableMin, maxOdds, activeStrategy,
+    totalAtRisk,
     comePoints, dontComePoints, rollCount, sessionWins, sessionLosses,
     lastRoll: lastRollRef.current, lastResult: log.length > 0 ? log[log.length-1].msg : "No rolls yet",
     consecutivePSOs,
   });
 
-  const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap'); @keyframes diceTumble { 0%{transform:translateY(-18px) rotate(-180deg) scale(.7);opacity:.3} 30%{transform:translateY(4px) rotate(40deg) scale(1.08);opacity:1} 50%{transform:translateY(-6px) rotate(-15deg) scale(1.02)} 70%{transform:translateY(2px) rotate(5deg) scale(1)} 85%{transform:translateY(-1px) rotate(-2deg)} 100%{transform:translateY(0) rotate(0) scale(1)} } @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } @keyframes pulseGreen { 0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)} 50%{box-shadow:0 0 0 8px rgba(76,175,80,0)} } @keyframes pulsePurple { 0%,100%{box-shadow:0 0 0 0 rgba(156,39,176,.4)} 50%{box-shadow:0 0 0 8px rgba(156,39,176,0)} } *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}`;
+  const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap'); @keyframes diceTumble { 0%{transform:translateY(-18px) rotate(-180deg) scale(.7);opacity:.3} 30%{transform:translateY(4px) rotate(40deg) scale(1.08);opacity:1} 50%{transform:translateY(-6px) rotate(-15deg) scale(1.02)} 70%{transform:translateY(2px) rotate(5deg) scale(1)} 85%{transform:translateY(-1px) rotate(-2deg)} 100%{transform:translateY(0) rotate(0) scale(1)} } @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } @keyframes pulseGreen { 0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)} 50%{box-shadow:0 0 0 8px rgba(76,175,80,0)} } @keyframes pulsePurple { 0%,100%{box-shadow:0 0 0 0 rgba(156,39,176,.4)} 50%{box-shadow:0 0 0 8px rgba(156,39,176,0)} } *{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px} body.col-resize-active{cursor:col-resize!important;user-select:none}`;
   const mono = "'JetBrains Mono', monospace";
   const pnl_ = { background: "#12121f", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" };
 
@@ -313,8 +333,6 @@ export default function CrapsTrainer() {
         setBankroll={setBankroll}
         startingBankroll={startingBankroll}
         setStartingBankroll={setStartingBankroll}
-        betUnit={betUnit}
-        setBetUnit={setBetUnit}
         tableMin={tableMin}
         setTableMin={setTableMin}
         buyVigPolicy={buyVigPolicy}
@@ -323,19 +341,17 @@ export default function CrapsTrainer() {
         setFieldPayOn12={setFieldPayOn12}
         maxOdds={maxOdds}
         setMaxOdds={setMaxOdds}
+        autoPassLine={autoPassLine}
+        setAutoPassLine={setAutoPassLine}
         setShowSetup={setShowSetup}
       />
     );
   }
 
-  const comeTotal = comePoints.reduce((s,c)=>s+c.amount+c.odds,0);
-  const dcTotal = dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
-
   const exposureCalc = (total) => calcOutcome({ phase, point, bets, comePoints, dontComePoints, fieldPayOn12 }, total);
 
-  const riskTotal_ = totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
   const bankrollPct = startingBankroll > 0 ? Math.round((bankroll / startingBankroll) * 100) : 100;
-  const exposurePct = bankroll > 0 ? Math.round((riskTotal_ / bankroll) * 100) : 0;
+  const exposurePct = bankroll > 0 ? Math.round((totalAtRisk / bankroll) * 100) : 0;
   const units = tableMin > 0 ? Math.floor(bankroll / tableMin) : 0;
   const unitsColor = units >= 20 ? "#4caf50" : units >= 10 ? "#ffc107" : "#f44336";
 
@@ -373,6 +389,32 @@ export default function CrapsTrainer() {
     betTracker.current = { smart: 0, ok: 0, trash: 0, smartAmt: 0, okAmt: 0, trashAmt: 0, total: 0, onStrat: 0, offStrat: 0, peak: startingBankroll, trough: startingBankroll };
   };
 
+  const handleBonusBet = (key) => {
+    if (bankroll < 5) return;
+    if (key === "allSmall") { setAllSmallBet((p) => p + 5); setBankroll((p) => p - 5); }
+    else if (key === "allTall") { setAllTallBet((p) => p + 5); setBankroll((p) => p - 5); }
+    else if (key === "allNumbers") { setAllNumbersBet((p) => p + 5); setBankroll((p) => p - 5); }
+  };
+
+  const handleBonusRemove = (key) => {
+    if (key === "allSmall" && allSmallBet > 0) { setBankroll((p) => p + allSmallBet); setAllSmallBet(0); setAllSmallHits([]); }
+    else if (key === "allTall" && allTallBet > 0) { setBankroll((p) => p + allTallBet); setAllTallBet(0); setAllTallHits([]); }
+    else if (key === "allNumbers" && allNumbersBet > 0) { setBankroll((p) => p + allNumbersBet); setAllNumbersBet(0); setAllNumbersHits([]); }
+  };
+
+  const handleFavoriteSelect = (key) => {
+    if (pickerSlotIndex === null) return;
+    setFavoriteSlots((prev) => assignFavoriteSlot(prev, pickerSlotIndex, key));
+    setPickerSlotIndex(null);
+  };
+
+  const toggleEditingFavorites = () => {
+    setEditingFavorites((prev) => {
+      if (prev) setPickerSlotIndex(null);
+      return !prev;
+    });
+  };
+
   if (isDesktop) {
     return (
       <div style={{minHeight:"100vh",background:"#0a0a14",color:"#e0e0e0",fontFamily:"'DM Sans',sans-serif"}}>
@@ -405,43 +447,77 @@ export default function CrapsTrainer() {
             <TrainerStat label="UNITS" value={units} color={unitsColor} isDesktop={isDesktop} mono={mono} />
             <TrainerStat label="P&L" value={`${pnl>=0?"+":""}${pnl}`} color={pnl>=0?"#4caf50":"#f44336"} isDesktop={isDesktop} mono={mono} />
             <TrainerStat label="ROLLS" value={rollCount} color="#888" isDesktop={isDesktop} mono={mono} />
-            <TrainerStat label="AT RISK" value={`$${totalBets}`} color="#ff9800" isDesktop={isDesktop} mono={mono} />
+            <TrainerStat label="AT RISK" value={`$${totalAtRisk}`} color="#ff9800" isDesktop={isDesktop} mono={mono} />
             {lastRollNet!==null&&rollCount>0&&<TrainerStat label="LAST" value={`${lastRollNet>0?"+":""}${lastRollNet===0?"$0":`$${Math.abs(lastRollNet)}`}`} color={lastRollNet>0?"#4caf50":lastRollNet<0?"#f44336":"#666"} isDesktop={isDesktop} mono={mono} />}
           </div>
         </div>
-        <div style={{display:"flex",height:"calc(100vh - 52px)",overflow:"hidden"}}>
-          <div style={{width:320,minWidth:320,borderRight:"1px solid rgba(255,255,255,.06)",overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
+        <div ref={layoutRef} style={{display:"flex",height:"calc(100vh - 52px)",overflow:"hidden"}}>
+          <div style={{width:leftWidth,minWidth:leftWidth,flexShrink:0,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555"}}>BETS</div>
-            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
-            <BetPanel
+            <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={totalAtRisk} units={units} />
+            <FavoriteBetsSection
               pnl_={pnl_}
-              tab={tab}
-              setTab={setTab}
+              favoriteSlots={favoriteSlots}
               bets={bets}
-              placeBet={placeBet}
-              removeBet={removeBet}
               phase={phase}
               point={point}
               maxOdds={maxOdds}
+              bankroll={bankroll}
+              tableMin={tableMin}
+              allSmallBet={allSmallBet}
+              allTallBet={allTallBet}
+              allNumbersBet={allNumbersBet}
+              placeBet={placeBet}
+              removeBet={removeBet}
+              onBonusBet={handleBonusBet}
+              onBonusRemove={handleBonusRemove}
               comePoints={comePoints}
               dontComePoints={dontComePoints}
-              bankroll={bankroll}
-              setBankroll={setBankroll}
-              allSmallBet={allSmallBet}
-              setAllSmallBet={setAllSmallBet}
-              allTallBet={allTallBet}
-              setAllTallBet={setAllTallBet}
-              allNumbersBet={allNumbersBet}
-              setAllNumbersBet={setAllNumbersBet}
-              allSmallHits={allSmallHits}
-              setAllSmallHits={setAllSmallHits}
-              allTallHits={allTallHits}
-              setAllTallHits={setAllTallHits}
-              allNumbersHits={allNumbersHits}
-              setAllNumbersHits={setAllNumbersHits}
-              buyVigPolicy={buyVigPolicy}
-              fieldPayOn12={fieldPayOn12}
+              addComeOdds={addComeOdds}
+              removeComeOdds={removeComeOdds}
+              addDcOdds={addDcOdds}
+              removeDcOdds={removeDcOdds}
+              editing={editingFavorites}
+              onToggleEdit={toggleEditingFavorites}
+              pickerSlotIndex={pickerSlotIndex}
+              onSlotTap={setPickerSlotIndex}
+              pickerTab={pickerTab}
+              setPickerTab={setPickerTab}
+              onFavoriteSelect={handleFavoriteSelect}
+              mono={mono}
             />
+            <CollapsibleAllBets collapsed={allBetsCollapsed} onToggle={toggleAllBets}>
+              <BetPanel
+                pnl_={pnl_}
+                tab={tab}
+                setTab={setTab}
+                bets={bets}
+                placeBet={placeBet}
+                removeBet={removeBet}
+                phase={phase}
+                point={point}
+                maxOdds={maxOdds}
+                comePoints={comePoints}
+                dontComePoints={dontComePoints}
+                bankroll={bankroll}
+                setBankroll={setBankroll}
+                allSmallBet={allSmallBet}
+                setAllSmallBet={setAllSmallBet}
+                allTallBet={allTallBet}
+                setAllTallBet={setAllTallBet}
+                allNumbersBet={allNumbersBet}
+                setAllNumbersBet={setAllNumbersBet}
+                allSmallHits={allSmallHits}
+                setAllSmallHits={setAllSmallHits}
+                allTallHits={allTallHits}
+                setAllTallHits={setAllTallHits}
+                allNumbersHits={allNumbersHits}
+                setAllNumbersHits={setAllNumbersHits}
+                buyVigPolicy={buyVigPolicy}
+                fieldPayOn12={fieldPayOn12}
+                tableMin={tableMin}
+              />
+            </CollapsibleAllBets>
             <StrategyGuide
               pnl_={pnl_}
               activeStrategy={activeStrategy}
@@ -449,7 +525,6 @@ export default function CrapsTrainer() {
               bets={bets}
               phase={phase}
               point={point}
-              betUnit={betUnit}
               comePoints={comePoints}
               maxOdds={maxOdds}
               bankroll={bankroll}
@@ -466,7 +541,7 @@ export default function CrapsTrainer() {
               dcTotal={dcTotal}
               maxOdds={maxOdds}
               bankroll={bankroll}
-              betUnit={betUnit}
+              tableMin={tableMin}
               addComeOdds={addComeOdds}
               removeComeOdds={removeComeOdds}
               addDcOdds={addDcOdds}
@@ -477,7 +552,8 @@ export default function CrapsTrainer() {
             <BetEfficiency bets={bets} comePoints={comePoints} dontComePoints={dontComePoints} pnl_={pnl_} buyVigPolicy={buyVigPolicy} fieldPayOn12={fieldPayOn12} />
             <StrategyQuickRef pnl_={pnl_} showStrategy={showStrategy} setShowStrategy={setShowStrategy} />
           </div>
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(255,255,255,.06)",overflowY:"auto"}}>
+          <ResizeHandle side="left" onPointerDown={startLeftResize} onDoubleClick={resetLeft} />
+          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflowY:"auto"}}>
             <DiceArea
               isDesktop={isDesktop}
               die1={die1}
@@ -486,7 +562,7 @@ export default function CrapsTrainer() {
               rotationEnabled={rotationEnabled}
               shooterTagSlot={<ShooterTag isBotShooter={isBotShooter} currentShooter={currentShooter} nextShooter={nextShooter} mono={mono} />}
               comePointPillsSlot={<ComePointPills comePoints={comePoints} dontComePoints={dontComePoints} mono={mono} />}
-              rollButtonSlot={<GameRollButton onClick={handleRollButton} disabled={rolling || totalBets === 0} isDesktop isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} />}
+              rollButtonSlot={<GameRollButton onClick={handleRollButton} disabled={rolling || totalAtRisk === 0} isDesktop isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} />}
               lastLogEntry={log.length > 0 ? { msg: log[log.length - 1].msg, type: log[log.length - 1].type } : null}
             />
             <div style={{padding:"0 16px 12px",width:"100%",maxWidth:520}}>
@@ -510,39 +586,55 @@ export default function CrapsTrainer() {
               <Footer onEndSession={() => setShowScorecard(true)} onReset={handleFooterReset} sessionWins={sessionWins} sessionLosses={sessionLosses} />
             </div>
           </div>
-          <div style={{width:380,minWidth:340,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555"}}>INTELLIGENCE</div>
-            <CoachPanel
-              pnl_={pnl_}
-              coachAdvice={coachAdvice}
-              coachLoading={coachLoading}
-              coachEnabled={coachEnabled}
-              setCoachAdvice={setCoachAdvice}
-              setCoachEnabled={setCoachEnabled}
-              askCoach={askCoach}
-              buildSnapshot={buildSnapshot}
-            />
-            <ExposureMap
-              pnl_={pnl_}
-              mono={mono}
-              maxOdds={maxOdds}
-              comeTotal={comeTotal}
-              dcTotal={dcTotal}
-              totalBets={totalBets}
-              calcOutcome={exposureCalc}
-            />
-            <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555",marginBottom:8}}>ROLL HISTORY</div>
-              <RollLog ref={logRef} log={log} mono={mono} height={280} />
-            </div>
-          </div>
+          {!intelligenceCollapsed && (
+            <>
+              <ResizeHandle side="right" onPointerDown={startRightResize} onDoubleClick={resetRight} />
+              <div style={{width:rightWidth,minWidth:rightWidth,flexShrink:0,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555"}}>INTELLIGENCE</div>
+                  <IntelligencePanelToggle direction="collapse" onClick={collapseIntelligence} title="Minimize intelligence panel" />
+                </div>
+                <CoachPanel
+                  pnl_={pnl_}
+                  coachAdvice={coachAdvice}
+                  coachLoading={coachLoading}
+                  coachEnabled={coachEnabled}
+                  setCoachAdvice={setCoachAdvice}
+                  setCoachEnabled={setCoachEnabled}
+                  askCoach={askCoach}
+                  buildSnapshot={buildSnapshot}
+                />
+                <ExposureMap
+                  pnl_={pnl_}
+                  mono={mono}
+                  maxOdds={maxOdds}
+                  comeTotal={comeTotal}
+                  dcTotal={dcTotal}
+                  totalBets={totalBets}
+                  calcOutcome={exposureCalc}
+                />
+                <div>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:".15em",color:"#555",marginBottom:8}}>ROLL HISTORY</div>
+                  <RollLog ref={logRef} log={log} mono={mono} height={280} />
+                </div>
+              </div>
+            </>
+          )}
         </div>
+        {intelligenceCollapsed && (
+          <IntelligencePanelToggle
+            direction="expand"
+            compact
+            onClick={expandIntelligence}
+            title="Show intelligence panel"
+            style={{position:"fixed",top:64,right:12,zIndex:11}}
+          />
+        )}
       </div>
     );
   }
 
   const lastEntry = log.length > 0 ? log[log.length - 1] : null;
-  const riskTotal = totalBets + comePoints.reduce((s,c)=>s+c.amount+c.odds,0) + dontComePoints.reduce((s,d)=>s+d.amount+d.odds,0);
 
   const toggleMobileSheet = (id) => {
     setMobileSheet((prev) => {
@@ -550,25 +642,6 @@ export default function CrapsTrainer() {
       if (next !== "editFavorites") setPickerSlotIndex(null);
       return next;
     });
-  };
-
-  const handleBonusBet = (key) => {
-    if (bankroll < 5) return;
-    if (key === "allSmall") { setAllSmallBet((p) => p + 5); setBankroll((p) => p - 5); }
-    else if (key === "allTall") { setAllTallBet((p) => p + 5); setBankroll((p) => p - 5); }
-    else if (key === "allNumbers") { setAllNumbersBet((p) => p + 5); setBankroll((p) => p - 5); }
-  };
-
-  const handleBonusRemove = (key) => {
-    if (key === "allSmall" && allSmallBet > 0) { setBankroll((p) => p + allSmallBet); setAllSmallBet(0); setAllSmallHits([]); }
-    else if (key === "allTall" && allTallBet > 0) { setBankroll((p) => p + allTallBet); setAllTallBet(0); setAllTallHits([]); }
-    else if (key === "allNumbers" && allNumbersBet > 0) { setBankroll((p) => p + allNumbersBet); setAllNumbersBet(0); setAllNumbersHits([]); }
-  };
-
-  const handleFavoriteSelect = (key) => {
-    if (pickerSlotIndex === null) return;
-    setFavoriteSlots((prev) => assignFavoriteSlot(prev, pickerSlotIndex, key));
-    setPickerSlotIndex(null);
   };
 
   const closeMobileSheet = () => {
@@ -596,7 +669,7 @@ export default function CrapsTrainer() {
 
       <MobileSheet sheet={mobileSheet} onClose={closeMobileSheet}>
         {mobileSheet === "position" && <>
-          <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
+          <BankrollZone compact={false} pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={totalAtRisk} units={units} />
           <ActiveBets
             pnl_={pnl_}
             mono={mono}
@@ -608,7 +681,7 @@ export default function CrapsTrainer() {
             dcTotal={dcTotal}
             maxOdds={maxOdds}
             bankroll={bankroll}
-            betUnit={betUnit}
+            tableMin={tableMin}
             addComeOdds={addComeOdds}
             removeComeOdds={removeComeOdds}
             addDcOdds={addDcOdds}
@@ -633,7 +706,6 @@ export default function CrapsTrainer() {
             bets={bets}
             phase={phase}
             point={point}
-            betUnit={betUnit}
             comePoints={comePoints}
             maxOdds={maxOdds}
             bankroll={bankroll}
@@ -687,6 +759,7 @@ export default function CrapsTrainer() {
             buyVigPolicy={buyVigPolicy}
             fieldPayOn12={fieldPayOn12}
             touch
+            tableMin={tableMin}
           />
         )}
         {mobileSheet === "editFavorites" && <>
@@ -700,7 +773,7 @@ export default function CrapsTrainer() {
             point={point}
             maxOdds={maxOdds}
             bankroll={bankroll}
-            betUnit={betUnit}
+            tableMin={tableMin}
             allSmallBet={allSmallBet}
             allTallBet={allTallBet}
             allNumbersBet={allNumbersBet}
@@ -734,7 +807,7 @@ export default function CrapsTrainer() {
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>BANK</div><div style={{fontSize:13,fontWeight:700,color:"#fff",fontFamily:mono}}>${bankroll}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>UNITS</div><div style={{fontSize:12,fontWeight:700,color:unitsColor,fontFamily:mono}}>{units}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>P&L</div><div style={{fontSize:12,fontWeight:700,color:pnl>=0?"#4caf50":"#f44336",fontFamily:mono}}>{pnl>=0?"+":""}{pnl}</div></div>
-            <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>RISK</div><div style={{fontSize:12,fontWeight:700,color:"#ff9800",fontFamily:mono}}>${riskTotal}</div></div>
+            <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>RISK</div><div style={{fontSize:12,fontWeight:700,color:"#ff9800",fontFamily:mono}}>${totalAtRisk}</div></div>
             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#666",fontWeight:700}}>#{rollCount}</div>
               {lastRollNet !== null && rollCount > 0 ? (
                 <div style={{fontSize:12,fontWeight:700,fontFamily:mono,color:lastRollNet>0?"#4caf50":lastRollNet<0?"#f44336":"#666"}}>{lastRollNet>0?"+":""}{lastRollNet===0?"—":`$${Math.abs(lastRollNet)}`}</div>
@@ -742,7 +815,7 @@ export default function CrapsTrainer() {
             </div>
           </div>
         </div>
-        <BankrollZone compact pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={riskTotal_} units={units} />
+        <BankrollZone compact pnl_={pnl_} zoneInfo={zoneInfo} bankrollPct={bankrollPct} exposurePct={exposurePct} mono={mono} bankroll={bankroll} currentTotalExposure={totalAtRisk} units={units} />
       </div>
 
       <div style={{flex:1,minHeight:0,overflowY:"auto",display:"flex",flexDirection:"column",justifyContent:"center",padding:"8px 12px",gap:8}}>
@@ -784,7 +857,7 @@ export default function CrapsTrainer() {
 
       <div style={{flexShrink:0,padding:"8px 12px 4px",width:"100%",maxWidth:440,margin:"0 auto",boxSizing:"border-box"}}>
         <div style={{width:"100%"}}>
-          <GameRollButton onClick={handleRollButton} disabled={rolling || totalBets === 0} isDesktop={false} isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} fullWidth />
+          <GameRollButton onClick={handleRollButton} disabled={rolling || totalAtRisk === 0} isDesktop={false} isBotShooter={isBotShooter} isBotActive={isBotShooter && autoRolling && !shooterPaused} label={rollBtnLabel()} fullWidth />
         </div>
       </div>
 
@@ -801,7 +874,7 @@ export default function CrapsTrainer() {
         comePoints={comePoints}
         dontComePoints={dontComePoints}
         bankroll={bankroll}
-        betUnit={betUnit}
+        tableMin={tableMin}
         allSmallBet={allSmallBet}
         allTallBet={allTallBet}
         allNumbersBet={allNumbersBet}

@@ -4,18 +4,18 @@ import {
   isFavoriteBetDisabled,
   isBonusKey,
 } from "../lib/favoriteBets.js";
-import { ratingColor } from "../lib/betLogic.js";
+import { ratingColor, getBetAddAmount } from "../lib/betLogic.js";
 import { HOUSE_EDGES } from "../lib/betLogic.js";
 
-function ActionBtn({ onClick, disabled, color, children }) {
+function ActionBtn({ onClick, disabled, color, children, compact }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       style={{
         flex: 1,
-        minHeight: 44,
-        fontSize: 18,
+        minHeight: compact ? 32 : 44,
+        fontSize: compact ? 15 : 18,
         fontWeight: 700,
         borderRadius: 8,
         background: disabled ? "#222" : `${color}22`,
@@ -36,7 +36,7 @@ export default function FavoriteBetGrid({
   point,
   maxOdds,
   bankroll,
-  betUnit,
+  tableMin,
   allSmallBet,
   allTallBet,
   allNumbersBet,
@@ -47,6 +47,7 @@ export default function FavoriteBetGrid({
   editing,
   onSlotTap,
   mono,
+  compact = false,
 }) {
   const gameState = { phase, point, bets, maxOdds };
 
@@ -80,6 +81,7 @@ export default function FavoriteBetGrid({
         const label = SHORT_LABELS[key] || key;
         const removeDisabled = amount <= 0
           || ((key === "pass" || key === "dontPass") && phase === "point");
+        const addAmt = isBonusKey(key) ? 5 : getBetAddAmount(key, tableMin, amount);
 
         return (
           <div
@@ -113,21 +115,21 @@ export default function FavoriteBetGrid({
             {!editing && (
               <div style={{ display: "flex", gap: 4 }}>
                 <ActionBtn
+                  compact={compact}
                   onClick={() => handleAdd(key)}
-                  disabled={disabled || (isBonusKey(key) ? bankroll < 5 : bankroll < betUnit)}
+                  disabled={disabled || bankroll < addAmt}
                   color="#4caf50"
                 >
                   +
                 </ActionBtn>
-                {amount > 0 && (
-                  <ActionBtn
-                    onClick={() => handleRemove(key)}
-                    disabled={removeDisabled}
-                    color="#f44336"
-                  >
-                    −
-                  </ActionBtn>
-                )}
+                <ActionBtn
+                  compact={compact}
+                  onClick={() => handleRemove(key)}
+                  disabled={removeDisabled || amount <= 0}
+                  color="#f44336"
+                >
+                  −
+                </ActionBtn>
               </div>
             )}
             {editing && (

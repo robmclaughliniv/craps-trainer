@@ -18,11 +18,11 @@ export function isOnStrategy(strategyId, betKey) {
 
 /**
  * @param {string|null} strategyId
- * @param {{ bets: object, phase: string, point: number|null, betUnit: number, comePoints: object[], maxOdds: string }} gameState
+ * @param {{ bets: object, phase: string, point: number|null, tableMin: number, comePoints: object[], maxOdds: string }} gameState
  */
 export function getStrategySteps(strategyId, gameState) {
   if (!strategyId) return null;
-  const { bets, phase, point, betUnit, comePoints, maxOdds } = gameState;
+  const { bets, phase, point, tableMin, comePoints, maxOdds } = gameState;
   const hasPass = bets.pass > 0;
   const passOddsMax = point ? getMaxOddsAmt(maxOdds, bets.pass, point) : 0;
   const passOddsDone = point && bets.passOdds >= passOddsMax && passOddsMax > 0;
@@ -36,7 +36,7 @@ export function getStrategySteps(strategyId, gameState) {
   if (strategyId === "conservative") {
     const steps = [];
     if (isComeout) {
-      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${betUnit})` });
+      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${tableMin})` });
       steps.push({ done: false, active: false, text: "Wait for point to be set" });
       steps.push({ done: false, active: false, text: "Max your odds behind the Pass" });
       steps.push({ done: false, active: false, text: "Stop. Watch. Collect or reset." });
@@ -54,7 +54,7 @@ export function getStrategySteps(strategyId, gameState) {
     const need8 = !isComeout && point !== 8;
     const steps = [];
     if (isComeout) {
-      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${betUnit})` });
+      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${tableMin})` });
       steps.push({ done: false, active: false, text: "Wait for point to be set" });
       steps.push({ done: false, active: false, text: "Max your odds" });
       steps.push({ done: false, active: false, text: "Place 6 & 8 (if not the point)" });
@@ -74,7 +74,7 @@ export function getStrategySteps(strategyId, gameState) {
   if (strategyId === "molly") {
     const steps = [];
     if (isComeout) {
-      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${betUnit})` });
+      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${tableMin})` });
       steps.push({ done: false, active: false, text: "Wait for point to be set" });
       steps.push({ done: false, active: false, text: "Max odds → Come bet → repeat to 3 points" });
     } else {
@@ -105,7 +105,7 @@ export function getStrategySteps(strategyId, gameState) {
     const need8 = !isComeout && !pointIs8;
     const steps = [];
     if (isComeout) {
-      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${betUnit})` });
+      steps.push({ done: hasPass, active: !hasPass, text: `Place Pass Line ($${tableMin})` });
       steps.push({ done: false, active: false, text: "Wait for point to be set" });
     } else if (pointIs6) {
       steps.push({ done: hasPass, active: false, text: `Pass Line on 6 ✓` });

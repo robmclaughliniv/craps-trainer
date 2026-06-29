@@ -5,8 +5,6 @@ export default function SetupScreen({
   setBankroll,
   startingBankroll,
   setStartingBankroll,
-  betUnit,
-  setBetUnit,
   tableMin,
   setTableMin,
   buyVigPolicy,
@@ -15,6 +13,8 @@ export default function SetupScreen({
   setFieldPayOn12,
   maxOdds,
   setMaxOdds,
+  autoPassLine,
+  setAutoPassLine,
   setShowSetup,
 }) {
   const setupUnits = tableMin > 0 ? Math.floor(startingBankroll / tableMin) : 0;
@@ -80,18 +80,36 @@ export default function SetupScreen({
               </div>
             </div>
           </div>
-          <label style={{ fontSize: 12, color: "#888", fontWeight: 600, letterSpacing: ".1em", display: "block", marginBottom: 8 }}>BET UNIT</label>
-          <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-            {[5, 10, 15, 25].map((v) => (
-              <button key={v} onClick={() => setBetUnit(v)} style={btnStyle(betUnit === v)}>${v}</button>
-            ))}
-          </div>
           <label style={{ fontSize: 12, color: "#888", fontWeight: 600, letterSpacing: ".1em", display: "block", marginBottom: 8 }}>MAX ODDS</label>
-          <div style={{ display: "flex", gap: 6, marginBottom: 28, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
             {[{ v: "1x", l: "1×" }, { v: "2x", l: "2×" }, { v: "345x", l: "3-4-5×" }, { v: "5x", l: "5×" }, { v: "10x", l: "10×" }].map((o) => (
               <button key={o.v} onClick={() => setMaxOdds(o.v)} style={{ ...btnStyle(maxOdds === o.v), fontSize: o.v === "345x" ? 13 : 15, minWidth: 0 }}>{o.l}</button>
             ))}
           </div>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc" }}>Auto Pass Line</div>
+              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Place a Pass bet on every come-out</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoPassLine(!autoPassLine)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: autoPassLine ? "rgba(76,175,80,.15)" : "rgba(255,255,255,.04)",
+                color: autoPassLine ? "#4caf50" : "#888",
+                border: `1px solid ${autoPassLine ? "rgba(76,175,80,.3)" : "rgba(255,255,255,.06)"}`,
+              }}
+            >
+              {autoPassLine ? "On" : "Off"}
+            </button>
+          </div>
+
           <button onClick={() => setShowSetup(false)} style={{ width: "100%", padding: "14px 0", borderRadius: 10, fontSize: 16, fontWeight: 700, background: "linear-gradient(135deg,#2e7d32,#4caf50)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(76,175,80,.3)" }}>Start Session →</button>
         </div>
         <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#555" }}>You shoot every roll by default. Toggle 👥 in-game for multiplayer.</div>
